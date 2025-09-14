@@ -1,4 +1,0 @@
-scripts/
-.iterate.json
-ROADMAP.md
-README.md
