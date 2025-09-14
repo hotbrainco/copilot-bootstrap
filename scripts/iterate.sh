@@ -18,7 +18,7 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
 
 # Execute function/cmd or just echo when dry-run
-do() {
+run_cmd() {
 	if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
 		echo "DRY-RUN: $*"
 	else
@@ -130,7 +130,7 @@ ensure_branch() {
 	if [[ "$current" == "main" || "$current" == "master" ]]; then
 		local ts; ts="$(date +%Y%m%d-%H%M%S)"
 		local new="iter/${ts}"
-		git checkout -b "$new"
+		run_cmd git checkout -b "$new"
 		echo "$new"
 	else
 		echo "$current"
@@ -165,7 +165,7 @@ step_build() {
 	local pm; pm="$(pm_detect)"
 	echo "==> Build using $pm"
 	if has_pkg_script "build"; then
-		do pm_run "$pm" build || die "Build failed"
+		run_cmd pm_run "$pm" build || die "Build failed"
 	else
 		echo "No build script found; skipping"
 	fi
@@ -180,14 +180,37 @@ step_test() {
 	echo "==> Test using $pm (if available)"
 	if has_pkg_script "test"; then
 		case "$pm" in
-				npm) do npm test --silent || do npm test;;
-				pnpm) do pnpm test --silent || do pnpm test;;
-				yarn) do yarn test --silent || do yarn test;;
+				npm) run_cmd npm test --silent || run_cmd npm test;;
+				pnpm) run_cmd pnpm test --silent || run_cmd pnpm test;;
+				yarn) run_cmd yarn test --silent || run_cmd yarn test;;
 		esac
 	elif have_cmd "vitest"; then
-			do vitest run
+			run_cmd vitest run
 	elif have_cmd "jest"; then
-			do jest --ci
+			run_cmd jest --ci
+	elif have_cmd "pytest"; then
+		# Run pytest and treat exit code 5 (no tests collected) as a soft-skip
+		set +e
+		pytest -q
+		code=$?
+		set -e
+		if [[ $code -eq 0 ]]; then
+			:
+		elif [[ $code -eq 5 ]]; then
+			echo "No pytest tests collected; skipping"
+		else
+			exit $code
+		fi
+	elif have_cmd "go"; then
+		if [[ -f go.mod ]]; then
+			if find . -type f -name '*_test.go' -print -quit | grep -q .; then
+				run_cmd go test ./...
+			else
+				echo "No Go tests detected; skipping"
+			fi
+		else
+			echo "No go.mod found; skipping Go tests"
+		fi
 	else
 		echo "No tests detected; skipping"
 	fi
@@ -203,31 +226,42 @@ step_docs() {
 
 	case "$system" in
 		docusaurus)
-				if has_pkg_script "docs:build"; then do pm_run "$pm" docs:build
-				elif has_pkg_script "build:docs"; then do pm_run "$pm" build:docs
-				elif has_pkg_script "docs"; then do pm_run "$pm" docs
-				else do pm_exec "$pm" docusaurus build
+			if has_pkg_script "docs:build"; then
+				run_cmd pm_run "$pm" docs:build
+			elif has_pkg_script "build:docs"; then
+				run_cmd pm_run "$pm" build:docs
+			elif has_pkg_script "docs"; then
+				run_cmd pm_run "$pm" docs
+			else
+				run_cmd pm_exec "$pm" docusaurus build
 			fi
 			;;
 		mkdocs)
-				if have_cmd "mkdocs"; then do mkdocs build
+			if have_cmd "mkdocs"; then
+				run_cmd mkdocs build
+			else
+				if should_strict_docs; then
+					die "mkdocs not installed. Install with: pip install mkdocs or brew install mkdocs"
 				else
-					if should_strict_docs; then die "mkdocs not installed. Install with: pip install mkdocs or brew install mkdocs"; else warn "mkdocs not installed; skipping docs"; fi
+					warn "mkdocs not installed; skipping docs"
 				fi
 			fi
 			;;
-				if have_cmd "sphinx-build"; then
-					local src="docs/source"; [[ -f docs/conf.py ]] && src="docs"
-					do sphinx-build -b html "$src" docs/_build
+		sphinx)
+			if have_cmd "sphinx-build"; then
+				local src="docs/source"; [[ -f docs/conf.py ]] && src="docs"
+				run_cmd sphinx-build -b html "$src" docs/_build
+			else
+				if should_strict_docs; then
+					die "sphinx-build not installed. Install with: pip install sphinx"
 				else
-					if should_strict_docs; then die "sphinx-build not installed. Install with: pip install sphinx"; else warn "sphinx-build not installed; skipping docs"; fi
+					warn "sphinx-build not installed; skipping docs"
 				fi
-			else die "sphinx-build not installed. Install with: pip install sphinx"
 			fi
 			;;
-					do pm_run "$pm" docs:update
+		none)
 			if has_pkg_script "docs:update"; then
-				pm_run "$pm" docs:update
+				run_cmd pm_run "$pm" docs:update
 			else
 				echo "No docs system detected and no 'docs:update' script; skipping docs"
 			fi
@@ -248,7 +282,7 @@ step_git() {
 		echo "No changes to commit"; return
 	fi
 
-	do git add -A
+	run_cmd git add -A
 
 	# Build a conventional-like message from staged changes
 	local msg="${ITERATE_COMMIT_PREFIX} update code and docs"
@@ -258,11 +292,11 @@ step_git() {
 		msg+=$'\n\nFiles changed:\n'"$summary"
 	fi
 
-		do git commit -m "$msg" || true
+		run_cmd git commit -m "$msg" || true
 
 	local branch; branch="$(ensure_branch)"
 		if has_origin_remote; then
-			do git push -u origin "$branch"
+			run_cmd git push -u origin "$branch"
 		else
 			warn "Push skipped (no origin remote)"
 		fi
@@ -272,6 +306,10 @@ step_pr() {
 	echo "==> Create or update PR"
 	if ! in_git_repo; then
 		echo "Not a git repository; skipping PR"
+		return
+	fi
+	if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
+		echo "DRY-RUN: gh pr create/update (skipped)"
 		return
 	fi
 	if ! have_cmd "gh"; then
@@ -297,7 +335,7 @@ step_pr() {
 	fi
 
 	echo "PR URL:"
-		do gh pr view --json url --jq .url || true
+		run_cmd gh pr view --json url --jq .url || true
 }
 
 # ---------- Main ----------

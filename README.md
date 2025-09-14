@@ -28,6 +28,7 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 - `.vscode/tasks.json`: VS Code tasks to drive the flow.
 - `.vscode/settings.json`: Enables Prompt Files for Copilot.
 - `scripts/iterate.sh`: Stack-aware orchestration for build, test, docs, git, and PR.
+- `.github/workflows/iterate-smoke.yml`: CI smoke that runs doctor, build, test, and docs (soft-skip) on PRs/pushes.
 - `.github/prompts/iterate-workflow.prompt.md`: Per-chat prompt to guide iterative work.
 - `.github/copilot-instructions.md`: Always-on Copilot repo instructions.
 - `ROADMAP.md`: A simple roadmap that both humans and Copilot can use.
@@ -50,10 +51,13 @@ scripts/iterate.sh doctor
 
 The preflight runs automatically when you use `iterate`.
 
+You can also run it via VS Code task: `iterate:doctor`.
+
 ## VS Code Tasks
 
 - `iterate`: build → test → docs → git → pr (default build task)
 - `iterate:no-git`: build → test → docs (useful for non-git repos)
+- `iterate:doctor`: runs preflight detection and prints environment/tooling summary
 - Subtasks: `iterate:build`, `iterate:test`, `iterate:docs`, `iterate:git`, `iterate:pr`
 
 Run any task via the Command Palette → "Tasks: Run Task".

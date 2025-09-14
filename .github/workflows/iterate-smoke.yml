@@ -1,0 +1,24 @@
+name: Iterate Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preflight (doctor)
+        run: bash scripts/iterate.sh doctor
+      - name: Build (if present)
+        run: bash scripts/iterate.sh build
+      - name: Test (if present)
+        env:
+          ITERATE_RUN_TESTS_IF_PRESENT: "true"
+        run: bash scripts/iterate.sh test
+      - name: Docs (soft-skip)
+        env:
+          ITERATE_SKIP_DOCS: "false"
+        run: bash scripts/iterate.sh docs
