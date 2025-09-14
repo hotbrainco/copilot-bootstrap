@@ -87,6 +87,24 @@
 				"panel": "dedicated"
 			}
 		},
+		{
+			"label": "iterate:doctor",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["doctor"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
 			{
 				"label": "iterate:no-git",
 				"dependsOrder": "sequence",

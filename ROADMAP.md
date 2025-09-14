@@ -13,13 +13,13 @@ Status buckets
 - Done: Completed items with links to PRs.
 
 ## Now
-- [ ] Feature/Task: Short, imperative title
-  - Why: One sentence on value/impact
+- [ ] Harden iteration loop and automation
+  - Why: Ensure the default "iterate" path is reliable, reducing manual intervention and enabling autonomous runs.
   - Acceptance:
-    - [ ] Criterion 1
-    - [ ] Criterion 2
-  - Tech notes: Key constraints, file pointers, or follow-ups (optional)
-  - Tests: What should be covered by tests (optional)
+    - [ ] Docs step runs without syntax errors and soft-skips when no docs are present
+    - [ ] VS Code exposes an "iterate:doctor" task
+    - [ ] A no-git iteration runs green locally
+  - Tech notes: Edit `scripts/iterate.sh` (`step_docs`), update `.vscode/tasks.json`. Consider adding CI smoke in a follow-up.
 
 ## Next
 - [ ] Example: Improve error handling in engine-runner
