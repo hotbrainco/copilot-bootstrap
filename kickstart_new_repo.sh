@@ -15,12 +15,14 @@ unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
 SRC="$TMPDIR/copilot-bootstrap-0.1.0"
 
 
-# Create bootstrap subfolder for regular files
+# Create bootstrap subfolder for scripts and docs
 mkdir -p bootstrap
 cp -r "$SRC/scripts" ./bootstrap/
-cp "$SRC/.iterate.json" ./bootstrap/
-cp "$SRC/ROADMAP.md" ./bootstrap/
 cp "$SRC/README.md" ./bootstrap/
+
+# Copy config and roadmap to root
+cp "$SRC/.iterate.json" .
+cp "$SRC/ROADMAP.md" .
 
 # Copy .github and .vscode to root
 cp -r "$SRC/.vscode" .
