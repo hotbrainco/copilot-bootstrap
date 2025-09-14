@@ -37,9 +37,10 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 
 - Detects package manager: pnpm → yarn → npm.
 - Detects docs: Docusaurus, MkDocs, Sphinx; or uses `docs:update` script if present.
-- Runs tests only if a test script or common test tool is found.
+- Runs tests only if present: package.json `test` script, or tools like `vitest`, `jest`, `pytest` (soft-skip on no tests), and Go tests (`go.mod` + `*_test.go`).
 - Commits, pushes, and manages PRs only if inside a git repo with an `origin` remote and GitHub CLI (`gh`) available.
 - Soft-fails by default: missing tools are warnings (unless strict mode is enabled).
+- Safe preview: set `ITERATE_DRY_RUN=true` to see actions without changing your repo.
 
 ## Preflight & Doctor
 
