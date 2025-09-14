@@ -35,7 +35,7 @@ A portable, stack-aware build–test–docs–git–PR loop you can drop into an
 - Or run the script directly:
 
 ```bash
-scripts/iterate.sh iterate
+bootstrap/scripts/iterate.sh iterate
 ```
 
 This executes, in order: build → test → docs → commit/push → PR.
@@ -44,8 +44,8 @@ If you’re not using git yet or don’t have a remote, use:
 
 ```bash
 # Skip git/PR steps
-scripts/iterate.sh doctor
-scripts/iterate.sh iterate
+bootstrap/scripts/iterate.sh doctor
+bootstrap/scripts/iterate.sh iterate
 ```
 
 The script will automatically skip unavailable steps, and prints a preflight summary first.
@@ -54,7 +54,7 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 
 - `.vscode/tasks.json`: VS Code tasks to drive the flow.
 - `.vscode/settings.json`: Enables Prompt Files for Copilot.
-- `scripts/iterate.sh`: Stack-aware orchestration for build, test, docs, git, and PR.
+- `bootstrap/scripts/iterate.sh`: Stack-aware orchestration for build, test, docs, git, and PR.
 - `.github/workflows/iterate-smoke.yml`: CI smoke that runs doctor, build, test, and docs (soft-skip) on PRs/pushes.
 - `.github/prompts/iterate-workflow.prompt.md`: Per-chat prompt to guide iterative work.
 - `.github/copilot-instructions.md`: Always-on Copilot repo instructions.
@@ -74,7 +74,7 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 Use the doctor to preview what will happen and what’s detected:
 
 ```bash
-scripts/iterate.sh doctor
+bootstrap/scripts/iterate.sh doctor
 ```
 
 The preflight runs automatically when you use `iterate`.
@@ -142,12 +142,12 @@ Install GitHub CLI: https://cli.github.com/
 - Copy this folder structure into your repo:
   - `.vscode/` (tasks and settings)
   - `.github/` (prompts and instructions)
-  - `scripts/iterate.sh`
+  - `bootstrap/scripts/iterate.sh`
   - `ROADMAP.md`
 - Make the script executable (macOS/Linux):
 
 ```bash
-chmod +x scripts/iterate.sh
+chmod +x bootstrap/scripts/iterate.sh
 ```
 
 - Open the repo in VS Code and run the `iterate` task.

@@ -5,7 +5,7 @@ You (GitHub Copilot in VS Code) will read this file and perform the setup end-to
 Your goals:
 1) Create or update all files listed below exactly as provided.
 2) If any file exists, merge minimally and explain what changed.
-3) Make the script executable (chmod +x scripts/iterate.sh).
+3) Make the script executable (chmod +x bootstrap/scripts/iterate.sh).
 4) Detect the project stack (package manager, docs system) and note what you detected.
 5) Run the VS Code task "iterate" to validate the loop.
 6) If anything fails, propose the smallest fix, apply it, and re-run "iterate" until green.
@@ -30,7 +30,7 @@ Stack detection you should use:
 
 After creating files:
 - Run: VS Code task "iterate"
-- If the task is not found, verify .vscode/tasks.json and scripts/iterate.sh paths, then retry.
+- If the task is not found, verify .vscode/tasks.json and bootstrap/scripts/iterate.sh paths, then retry.
 
 Below are the files to create. Write them exactly as shown.
 
@@ -55,7 +55,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:build",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["build"],
 			"options": {
 				"shell": {
@@ -73,7 +73,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:test",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["test"],
 			"options": {
 				"shell": {
@@ -90,7 +90,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:docs",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["docs"],
 			"options": {
 				"shell": {
@@ -107,7 +107,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:git",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["git"],
 			"options": {
 				"shell": {
@@ -124,7 +124,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:pr",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["pr"],
 			"options": {
 				"shell": {
@@ -141,7 +141,7 @@ Below are the files to create. Write them exactly as shown.
 		{
 			"label": "iterate:doctor",
 			"type": "shell",
-			"command": "scripts/iterate.sh",
+			"command": "bootstrap/scripts/iterate.sh",
 			"args": ["doctor"],
 			"options": {
 				"shell": {
@@ -212,7 +212,7 @@ Below are the files to create. Write them exactly as shown.
 
 ## 3) Orchestration script (stack-aware)
 
-```bash name=scripts/iterate.sh
+```bash name=bootstrap/scripts/iterate.sh
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
@@ -583,7 +583,7 @@ case "$cmd" in
 		;;
 	help|*)
 		cat <<EOF
-Usage: scripts/iterate.sh [build|test|docs|git|pr|iterate|doctor]
+Usage: bootstrap/scripts/iterate.sh [build|test|docs|git|pr|iterate|doctor]
 Environment:
 	ITERATE_COMMIT_PREFIX           default "chore:"
 	ITERATE_PR_TITLE_PREFIX         default "chore:"
@@ -607,7 +607,7 @@ esac
 ```
 
 After writing, make it executable:
-- macOS/Linux: run: chmod +x scripts/iterate.sh
+- macOS/Linux: run: chmod +x bootstrap/scripts/iterate.sh
 - Windows: run the above in Git Bash or WSL.
 
 ---
@@ -627,7 +627,7 @@ Guidelines:
 Process:
 1) Propose and apply the smallest viable code change(s).
 2) Run the VS Code task "iterate".
-   - This triggers build, test, docs, commit, push, and PR steps via scripts/iterate.sh.
+	- This triggers build, test, docs, commit, push, and PR steps via bootstrap/scripts/iterate.sh.
 3) If a step fails:
    - Paste the relevant errors.
    - Propose the smallest targeted fix and apply it.
@@ -672,7 +672,7 @@ Conventions
 - Respect repository conventions in #file:CONTRIBUTING.md, #file:README.md, and any files in .github/ when present.
 
 Notes
-- If the "iterate" task is missing, check this bootstrap file and offer to (re)create .vscode/tasks.json and scripts/iterate.sh.
+- If the "iterate" task is missing, check this bootstrap file and offer to (re)create .vscode/tasks.json and bootstrap/scripts/iterate.sh.
 - If #file:ROADMAP.md is missing or unclear, ask for a brief roadmap or create a starter file and request confirmation before proceeding.
 ```
 
@@ -721,8 +721,8 @@ Status buckets
 
 ## Final steps for Copilot (run these now)
 
-1) Make scripts/iterate.sh executable:
-   - macOS/Linux: run: chmod +x scripts/iterate.sh
+1) Make bootstrap/scripts/iterate.sh executable:
+	- macOS/Linux: run: chmod +x bootstrap/scripts/iterate.sh
    - Windows: run the above in Git Bash or WSL.
 
 2) Detect the stack (package manager, docs system) and report what you found.
