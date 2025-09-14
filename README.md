@@ -16,13 +16,14 @@
   ```
   This will:
   - Download the latest workflow files from this repo.
-  - Copy them into your app workspace.
+  - Copy regular files (`scripts/`, `.iterate.json`, `ROADMAP.md`, `README.md`) into a `bootstrap/` subfolder.
+  - Copy `.github/` and `.vscode/` into your repo root.
   - Make everything ready to use.
 
   Afterwards, you can immediately run:
   ```bash
-  bash scripts/iterate.sh doctor
-  bash scripts/iterate.sh iterate
+  bash bootstrap/scripts/iterate.sh doctor
+  bash bootstrap/scripts/iterate.sh iterate
   ```
 
 

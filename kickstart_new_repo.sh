@@ -14,15 +14,19 @@ curl -L "$ZIP_URL" -o "$TMPDIR/cb.zip"
 unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
 SRC="$TMPDIR/copilot-bootstrap-0.1.0"
 
-# Copy workflow files into current directory
-cp -r "$SRC/scripts" .
+
+# Create bootstrap subfolder for regular files
+mkdir -p bootstrap
+cp -r "$SRC/scripts" ./bootstrap/
+cp "$SRC/.iterate.json" ./bootstrap/
+cp "$SRC/ROADMAP.md" ./bootstrap/
+cp "$SRC/README.md" ./bootstrap/
+
+# Copy .github and .vscode to root
 cp -r "$SRC/.vscode" .
 cp -r "$SRC/.github" .
-cp "$SRC/.iterate.json" .
-cp "$SRC/ROADMAP.md" .
-cp "$SRC/README.md" .
 
-chmod +x scripts/iterate.sh
+chmod +x ./bootstrap/scripts/iterate.sh
 
 # Clean up temp
 rm -rf "$TMPDIR"
