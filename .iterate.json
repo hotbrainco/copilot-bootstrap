@@ -1,0 +1,14 @@
+{
+  "commitPrefix": "chore:",
+  "prTitlePrefix": "chore:",
+  "prDraft": "true",
+  "prBase": "",
+  "prReviewers": "",
+  "skipDocs": "false",
+  "runTestsIfPresent": "true",
+  "strict": "false",
+  "strictDocs": "",
+  "dryRun": "false",
+  "skipGit": "false",
+  "skipPr": "true"
+}

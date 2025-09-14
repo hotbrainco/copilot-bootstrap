@@ -12,6 +12,8 @@ set -Eeuo pipefail
 : "${ITERATE_STRICT:=false}"            # "true" to fail on missing tools
 : "${ITERATE_STRICT_DOCS:=}"            # override docs strictness; defaults to ITERATE_STRICT
 : "${ITERATE_DRY_RUN:=false}"           # "true" to only print actions
+: "${ITERATE_SKIP_GIT:=false}"          # "true" to skip commit/push
+: "${ITERATE_SKIP_PR:=false}"           # "true" to skip PR creation/update
 
 # ---------- Helpers ----------
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -271,6 +273,9 @@ step_docs() {
 
 step_git() {
 	echo "==> Git commit and push"
+	if [[ "${ITERATE_SKIP_GIT}" == "true" ]]; then
+		echo "Git step skipped by config"; return
+	fi
 	if ! in_git_repo; then
 		echo "Not a git repository; skipping commit and push"
 		return
@@ -304,6 +309,9 @@ step_git() {
 
 step_pr() {
 	echo "==> Create or update PR"
+	if [[ "${ITERATE_SKIP_PR}" == "true" ]]; then
+		echo "PR step skipped by config"; return
+	fi
 	if ! in_git_repo; then
 		echo "Not a git repository; skipping PR"
 		return
@@ -372,6 +380,8 @@ Environment:
 	ITERATE_STRICT                  "true" to error on missing tools
 	ITERATE_STRICT_DOCS             override docs strictness (default inherit)
 	ITERATE_DRY_RUN                 "true" to print actions without running
+	ITERATE_SKIP_GIT               "true" to skip commit/push
+	ITERATE_SKIP_PR                "true" to skip PR creation/update
 
 Config file:
 	Optional .iterate.json (requires jq). Example keys:

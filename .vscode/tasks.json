@@ -131,5 +131,27 @@
 			},
 			"problemMatcher": []
 		}
+		,
+		{
+			"label": "iterate:no-pr",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["iterate"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				},
+				"env": {
+					"ITERATE_SKIP_PR": "true"
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated",
+				"clear": true
+			}
+		}
 	]
 }

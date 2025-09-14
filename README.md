@@ -58,6 +58,7 @@ You can also run it via VS Code task: `iterate:doctor`.
 
 - `iterate`: build → test → docs → git → pr (default build task)
 - `iterate:no-git`: build → test → docs (useful for non-git repos)
+- `iterate:no-pr`: full iterate but skips PR creation/update
 - `iterate:doctor`: runs preflight detection and prints environment/tooling summary
 - Subtasks: `iterate:build`, `iterate:test`, `iterate:docs`, `iterate:git`, `iterate:pr`
 
@@ -79,6 +80,8 @@ Environment variables:
 - `ITERATE_STRICT`: `true` to fail on missing tools (default `false`)
 - `ITERATE_STRICT_DOCS`: override docs strictness (default inherits `ITERATE_STRICT`)
 - `ITERATE_DRY_RUN`: `true` to print actions without running
+- `ITERATE_SKIP_GIT`: `true` to skip commit/push
+- `ITERATE_SKIP_PR`: `true` to skip PR creation/update
 
 Optional `.iterate.json` example:
 
@@ -93,7 +96,9 @@ Optional `.iterate.json` example:
   "runTestsIfPresent": "true",
   "strict": "false",
   "strictDocs": "false",
-  "dryRun": "false"
+  "dryRun": "false",
+  "skipGit": "false",
+  "skipPr": "true"
 }
 ```
 
