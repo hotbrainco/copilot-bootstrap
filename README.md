@@ -1,5 +1,31 @@
 # Iteration Workflow Starter
 
+## Setup Scripts
+
+
+`kickstart_new_repo.sh` is a one-time setup helper for copying workflow files into a new app repo.
+
+**Warning:** Do not use or reference `kickstart_new_repo.sh` after initial setup. It is not for app runtime, CI, or automation.
+
+### Usage
+
+1. Copy `kickstart_new_repo.sh` into your new app folder.
+2. Run this in VS Code’s terminal:
+  ```bash
+  bash kickstart_new_repo.sh
+  ```
+  This will:
+  - Download the latest workflow files from this repo.
+  - Copy them into your app workspace.
+  - Make everything ready to use.
+
+  Afterwards, you can immediately run:
+  ```bash
+  bash scripts/iterate.sh doctor
+  bash scripts/iterate.sh iterate
+  ```
+
+
 A portable, stack-aware build–test–docs–git–PR loop you can drop into any repository. It adds VS Code tasks, a script to orchestrate common steps, and guidance to keep changes small and iterative.
 
 ## Quick Start
