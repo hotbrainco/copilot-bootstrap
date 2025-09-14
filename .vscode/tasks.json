@@ -1,0 +1,117 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "iterate:build",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["build"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "iterate:test",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["test"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "iterate:docs",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["docs"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "iterate:git",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["git"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "iterate:pr",
+			"type": "shell",
+			"command": "scripts/iterate.sh",
+			"args": ["pr"],
+			"options": {
+				"shell": {
+					"executable": "bash",
+					"args": ["-lc"]
+				}
+			},
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"panel": "dedicated"
+			}
+		},
+			{
+				"label": "iterate:no-git",
+				"dependsOrder": "sequence",
+				"dependsOn": [
+					"iterate:build",
+					"iterate:test",
+					"iterate:docs"
+				],
+				"problemMatcher": []
+			},
+		{
+			"label": "iterate",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"iterate:build",
+				"iterate:test",
+				"iterate:docs",
+				"iterate:git",
+				"iterate:pr"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": []
+		}
+	]
+}

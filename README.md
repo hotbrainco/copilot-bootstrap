@@ -1,0 +1,133 @@
+# Iteration Workflow Starter
+
+A portable, stack-aware build–test–docs–git–PR loop you can drop into any repository. It adds VS Code tasks, a script to orchestrate common steps, and guidance to keep changes small and iterative.
+
+## Quick Start
+
+- Run in VS Code: open the Command Palette → "Tasks: Run Build Task" → select `iterate`.
+- Or run the script directly:
+
+```bash
+scripts/iterate.sh iterate
+```
+
+This executes, in order: build → test → docs → commit/push → PR.
+
+If you’re not using git yet or don’t have a remote, use:
+
+```bash
+# Skip git/PR steps
+scripts/iterate.sh doctor
+scripts/iterate.sh iterate
+```
+
+The script will automatically skip unavailable steps, and prints a preflight summary first.
+
+## What’s Included
+
+- `.vscode/tasks.json`: VS Code tasks to drive the flow.
+- `.vscode/settings.json`: Enables Prompt Files for Copilot.
+- `scripts/iterate.sh`: Stack-aware orchestration for build, test, docs, git, and PR.
+- `.github/prompts/iterate-workflow.prompt.md`: Per-chat prompt to guide iterative work.
+- `.github/copilot-instructions.md`: Always-on Copilot repo instructions.
+- `ROADMAP.md`: A simple roadmap that both humans and Copilot can use.
+
+## Behavior Overview
+
+- Detects package manager: pnpm → yarn → npm.
+- Detects docs: Docusaurus, MkDocs, Sphinx; or uses `docs:update` script if present.
+- Runs tests only if a test script or common test tool is found.
+- Commits, pushes, and manages PRs only if inside a git repo with an `origin` remote and GitHub CLI (`gh`) available.
+- Soft-fails by default: missing tools are warnings (unless strict mode is enabled).
+
+## Preflight & Doctor
+
+Use the doctor to preview what will happen and what’s detected:
+
+```bash
+scripts/iterate.sh doctor
+```
+
+The preflight runs automatically when you use `iterate`.
+
+## VS Code Tasks
+
+- `iterate`: build → test → docs → git → pr (default build task)
+- `iterate:no-git`: build → test → docs (useful for non-git repos)
+- Subtasks: `iterate:build`, `iterate:test`, `iterate:docs`, `iterate:git`, `iterate:pr`
+
+Run any task via the Command Palette → "Tasks: Run Task".
+
+## Configuration
+
+The script supports environment variables and an optional `.iterate.json` file (requires `jq`) to tune behavior.
+
+Environment variables:
+
+- `ITERATE_COMMIT_PREFIX`: commit message prefix (default `chore:`)
+- `ITERATE_PR_TITLE_PREFIX`: PR title prefix (default `chore:`)
+- `ITERATE_PR_DRAFT`: `true|false` (default `true`)
+- `ITERATE_PR_BASE`: PR base branch (empty = repo default)
+- `ITERATE_PR_REVIEWERS`: comma-separated GitHub handles
+- `ITERATE_SKIP_DOCS`: `true` to skip docs
+- `ITERATE_RUN_TESTS_IF_PRESENT`: `true` to run tests if detected (default `true`)
+- `ITERATE_STRICT`: `true` to fail on missing tools (default `false`)
+- `ITERATE_STRICT_DOCS`: override docs strictness (default inherits `ITERATE_STRICT`)
+- `ITERATE_DRY_RUN`: `true` to print actions without running
+
+Optional `.iterate.json` example:
+
+```json
+{
+  "commitPrefix": "chore:",
+  "prTitlePrefix": "chore:",
+  "prDraft": "true",
+  "prBase": "main",
+  "prReviewers": "octocat",
+  "skipDocs": "false",
+  "runTestsIfPresent": "true",
+  "strict": "false",
+  "strictDocs": "false",
+  "dryRun": "false"
+}
+```
+
+## Git & PR Behavior
+
+- If not in a git repo: git and PR steps are skipped.
+- If no `origin` remote: push and PR creation are skipped.
+- If `gh` is not installed: prints a suggestion to install and skips PR.
+
+Install GitHub CLI: https://cli.github.com/
+
+## Adding to Any Repository
+
+- Copy this folder structure into your repo:
+  - `.vscode/` (tasks and settings)
+  - `.github/` (prompts and instructions)
+  - `scripts/iterate.sh`
+  - `ROADMAP.md`
+- Make the script executable (macOS/Linux):
+
+```bash
+chmod +x scripts/iterate.sh
+```
+
+- Open the repo in VS Code and run the `iterate` task.
+
+## Tips for Monorepos
+
+- Provide root `build`, `test`, and `docs:*` scripts that orchestrate subpackages.
+- If that’s not possible yet, set `ITERATE_RUN_TESTS_IF_PRESENT=false` to avoid noisy failures.
+
+## Troubleshooting
+
+- Missing tools: enable strict mode to fail explicitly (`ITERATE_STRICT=true`), or install the required tool.
+- Unexpected git behavior: ensure you’re on a branch and have `origin` configured.
+- PR step errors: verify you’re authenticated with `gh auth login` and have push permissions.
+
+## Roadmap Workflow
+
+- Use `ROADMAP.md` as the source of truth.
+- Keep changes small; update tests and docs alongside code.
+- After successful iterations, the script commits and can create/update a draft PR by default.
