@@ -1,0 +1,25 @@
+name: guard-conflict-markers
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail on conflict markers
+        run: |
+          set -euo pipefail
+          if git grep -nE '^(<<<<<<< |=======|>>>>>>> )' -- . \
+            ':!**/package-lock.json' ':!**/pnpm-lock.yaml' ':!**/yarn.lock' >/dev/null; then
+            echo "Conflict markers found in repository:" >&2
+            git grep -nE '^(<<<<<<< |=======|>>>>>>> )' -- . \
+              ':!**/package-lock.json' ':!**/pnpm-lock.yaml' ':!**/yarn.lock' >&2
+            exit 1
+          fi

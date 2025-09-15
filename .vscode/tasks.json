@@ -177,5 +177,22 @@
 			"problemMatcher": [],
 			"presentation": { "reveal": "silent", "panel": "dedicated", "clear": true }
 		}
+		,
+		{
+			"label": "git:sync-main",
+			"type": "shell",
+			"command": "bash",
+			"args": ["-lc", "git switch main && git fetch origin && git reset --hard origin/main"],
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "shared", "clear": true }
+		},
+		{
+			"label": "git:ff-only",
+			"type": "shell",
+			"command": "bash",
+			"args": ["-lc", "git config --global pull.ff only && echo 'Configured pull.ff=only'"],
+			"problemMatcher": [],
+			"presentation": { "reveal": "always", "panel": "shared" }
+		}
 	]
 }
