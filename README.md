@@ -289,6 +289,20 @@ chmod +x bootstrap/scripts/iterate.sh
 - Unexpected git behavior: ensure you’re on a branch and have `origin` configured.
 - PR step errors: verify you’re authenticated with `gh auth login` and have push permissions.
 
+- `iterate:pr` hangs or asks “Where should we push the 'main' branch?”:
+  - Why: The PR step ran from `main`/`master`, which makes `gh` ask an interactive question.
+  - Fix: Run PRs from a feature branch or skip PRs:
+    - Create a branch then iterate:
+      ```bash
+      git checkout -b iter/$(date +%Y%m%d-%H%M%S)
+      bootstrap/scripts/iterate.sh iterate
+      ```
+    - Or skip PR creation:
+      ```bash
+      ITERATE_SKIP_PR=true bootstrap/scripts/iterate.sh iterate
+      ```
+  - Note: The script intentionally skips PRs on `main/master` to avoid interactive prompts. If a VS Code task was started before this behavior, terminate it and re-run.
+
 ## Roadmap Workflow
 
 - Use `ROADMAP.md` as the source of truth.
