@@ -107,6 +107,59 @@ if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 	fi
 fi
 
+	# --- Git/GitHub setup walkthrough ---
+	in_git_repo() { git rev-parse --is-inside-work-tree >/dev/null 2>&1; }
+	has_origin_remote() { git remote get-url origin >/dev/null 2>&1; }
+	git_has_commits() { git rev-parse HEAD >/dev/null 2>&1; }
+	ensure_initial_commit() {
+		if ! git_has_commits; then
+			git add -A || true
+			git commit -m "chore: bootstrap iteration workflow" || true
+		fi
+	}
+	maybe_setup_git_and_origin() {
+		is_tty || return 0
+		if ! in_git_repo; then
+			if yesno "Initialize a git repository here?" Y; then
+				git init -b main 2>/dev/null || { git init || true; }
+				# Ensure default branch is main before first commit when possible
+				git symbolic-ref HEAD refs/heads/main 2>/dev/null || true
+				ensure_initial_commit
+				echo "✅ Initialized git repo (main) and created initial commit"
+			fi
+		fi
+		if in_git_repo && ! has_origin_remote; then
+			if yesno "Connect this repo to GitHub now?" Y; then
+				read -r -p "Enter existing GitHub repo URL (ssh/https), or leave blank to create via gh: " GH_URL < /dev/tty || true
+				if [[ -n "${GH_URL:-}" ]]; then
+					git remote add origin "$GH_URL" 2>/dev/null || git remote set-url origin "$GH_URL" || true
+					ensure_initial_commit
+					if yesno "Push to origin now?" Y; then
+						git push -u origin main || true
+					fi
+				elif command -v gh >/dev/null 2>&1; then
+					DEFAULT_NAME="${PWD##*/}"
+					read -r -p "New repo name [${DEFAULT_NAME}]: " NEW_NAME < /dev/tty || true
+					NEW_NAME=${NEW_NAME:-$DEFAULT_NAME}
+					read -r -p "Visibility (private/public) [private]: " VIS < /dev/tty || true
+					VIS=${VIS:-private}
+					ensure_initial_commit
+					# Allow org/name input; gh uses current user if no owner provided
+					gh repo create "$NEW_NAME" --source=. --push --"$VIS" -y || true
+				else
+					echo "gh CLI not found. You can create a repo later and run: git remote add origin <url>; git push -u origin main"
+				fi
+			fi
+		fi
+		# Re-apply gh credential helper now that repo may exist
+		if command -v gh >/dev/null 2>&1 && in_git_repo; then
+			git config --local --unset-all credential.helper 2>/dev/null || true
+			git config --local credential.helper '!gh auth git-credential' || true
+		fi
+	}
+
+	maybe_setup_git_and_origin
+
 	# --- Optional interactive docs setup ---
 
 	maybe_copy_docs_starter() {
@@ -180,8 +233,11 @@ fi
 				;;
 		esac
 		
-		if yesno "Enable GitHub Pages to publish docs (requires gh + origin)?" N; then
-			enable_pages_via_gh || true
+		# Offer Pages enablement only when gh + origin are present
+		if command -v gh >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; then
+			if yesno "Enable GitHub Pages to publish docs (uses Actions)?" N; then
+				enable_pages_via_gh || true
+			fi
 		fi
 		
 		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" N; then

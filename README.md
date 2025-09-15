@@ -12,6 +12,7 @@ What this does:
 - Adds `.iterate.json`, `ROADMAP.md`, `.vscode/`, `.github/` (preserving existing files)
 - Prints next-step commands to run the iteration loop
 - Prompts you to confirm before copying files
+- Guides you to set up git and a GitHub repo (init, connect existing URL, or create via `gh`) and only then offers to enable GitHub Pages
 
 Doctor (preflight):
 
