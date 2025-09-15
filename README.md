@@ -120,7 +120,7 @@ Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are a
 ```bash
 ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
 ```
-
+ 
 ## Behavior Overview
 
 - Detects package manager: pnpm → yarn → npm.
