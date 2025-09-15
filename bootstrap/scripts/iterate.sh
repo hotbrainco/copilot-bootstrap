@@ -159,19 +159,33 @@ repo_slug() {
 }
 
 pages_enabled() {
-	have_cmd gh || return 1
 	has_origin_remote || return 1
 	local slug
 	slug=$(repo_slug) || return 1
-	gh api "repos/${slug}/pages" >/dev/null 2>&1
+	if [[ -n "${GITHUB_TOKEN-}" ]]; then
+		curl -fsS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+			"https://api.github.com/repos/${slug}/pages" >/dev/null 2>&1
+	elif have_cmd gh; then
+		gh api "repos/${slug}/pages" >/dev/null 2>&1
+	else
+		return 1
+	fi
 }
 
 enable_pages() {
-	have_cmd gh || return 1
 	has_origin_remote || return 1
 	local slug
 	slug=$(repo_slug) || return 1
-	run_cmd gh api --method PUT "repos/${slug}/pages" -f build_type=workflow
+	if [[ -n "${GITHUB_TOKEN-}" ]]; then
+		run_cmd curl -fsS -X PUT -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+			-d '{"build_type":"workflow"}' \
+			"https://api.github.com/repos/${slug}/pages"
+	elif have_cmd gh; then
+		run_cmd gh api --method PUT "repos/${slug}/pages" -f build_type=workflow
+	else
+		warn "Cannot enable GitHub Pages: set GITHUB_TOKEN or install gh"
+		return 1
+	fi
 }
 
 git_has_changes() {
@@ -299,12 +313,19 @@ step_docs() {
 			if have_cmd "mkdocs"; then
 				run_cmd mkdocs build
 				# Suggest enabling GitHub Pages (Actions) for publishing
-				if have_cmd gh && has_origin_remote; then
+				if has_origin_remote; then
 					if pages_enabled; then
 						echo "GitHub Pages is enabled for this repository."
 					else
 						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
-						echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						if [[ -n "${GITHUB_TOKEN-}" ]]; then
+							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\
+  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
+						elif have_cmd gh; then
+							echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						else
+							echo "  (set GITHUB_TOKEN or install gh)"
+						fi
 						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
 							enable_pages || warn "Failed to enable GitHub Pages via gh"
 						fi
