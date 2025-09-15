@@ -14,20 +14,20 @@ Run this from the root of your app’s repository (new or existing). This copies
 - Note: The `iterate` task automatically creates a feature branch when run from `main`/`master` to avoid conflicts.
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.3/copilot-bootstrap.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh)"
 ```
 
 No pipe-to-shell alternative:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.3/copilot-bootstrap.sh -o copilot-bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh -o copilot-bootstrap.sh
 bash copilot-bootstrap.sh
 ```
 
 Tip: To force interactive prompts (even when piping), set `BOOTSTRAP_INTERACTIVE=true`:
 
 ```bash
-BOOTSTRAP_INTERACTIVE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.3/copilot-bootstrap.sh)"
+BOOTSTRAP_INTERACTIVE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh)"
 ```
 
 What gets installed
