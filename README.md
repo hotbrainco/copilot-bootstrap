@@ -91,17 +91,56 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 - `.github/copilot-instructions.md`: Always-on Copilot repo instructions.
 - `ROADMAP.md`: A simple roadmap that both humans and Copilot can use.
 
-## Optional: Docs Starter (MkDocs)
+## Optional: Documentation Setup
 
-This repo includes an optional MkDocs starter (`mkdocs.yml` + `docs/index.md`). If you want a documentation site:
+This repo supports multiple documentation options to fit different preferences and tech stacks:
+
+### MkDocs (Python-based)
+Material theme, excellent for technical documentation:
 
 ```bash
-chmod +x bootstrap/scripts/install-mkdocs.sh
+# Install in local .venv (recommended)
 bash bootstrap/scripts/install-mkdocs.sh
+
+# Or activate existing environment
+source .venv/bin/activate
 mkdocs serve
 ```
 
-Or build via the iterate docs step:
+### VitePress (Node.js-based)
+Vue-powered, fast and modern:
+
+```bash
+# Setup VitePress docs
+bash bootstrap/scripts/setup-docs.sh vitepress
+
+# Install and run
+npm add -D vitepress
+npx vitepress dev docs
+```
+
+### Docusaurus (Node.js-based)
+React-based, feature-rich platform:
+
+```bash
+# Setup Docusaurus (creates docs/ folder)
+bash bootstrap/scripts/setup-docs.sh docusaurus
+
+# Run development server
+cd docs && npm start
+```
+
+### Simple Markdown
+No dependencies, works with GitHub Pages:
+
+```bash
+# Creates docs/ with markdown files and GitHub Pages workflow
+bash bootstrap/scripts/setup-docs.sh simple
+```
+
+### Build via iterate
+
+For any docs system, you can also build via the iterate docs step:
 
 ```bash
 bootstrap/scripts/iterate.sh docs

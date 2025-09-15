@@ -112,16 +112,51 @@ fi
 		gh api --method PUT "repos/${slug}/pages" -f build_type=workflow && echo "✅ Enabled GitHub Pages (Actions)" || echo "WARN: Failed to enable Pages"
 	}
 
-	if yesno "Set up a MkDocs documentation site now?" N; then
-		maybe_copy_docs_starter
-		chmod +x ./bootstrap/scripts/install-mkdocs.sh || true
-		if yesno "Install MkDocs locally now (pipx/pip --user)?" N; then
-			bash ./bootstrap/scripts/install-mkdocs.sh || true
-		fi
+	if yesno "Set up documentation now?" N; then
+		echo ""
+		echo "📚 Documentation options:"
+		echo "  1. MkDocs (Python) - Material theme, great for technical docs"
+		echo "  2. VitePress (Node.js) - Vue-based, fast and modern"
+		echo "  3. Docusaurus (Node.js) - React-based, feature-rich"
+		echo "  4. Simple Markdown - No dependencies, works with GitHub Pages"
+		echo ""
+		read -r -p "Choose option (1-4) [1]: " docs_choice
+		docs_choice=${docs_choice:-1}
+		
+		case "$docs_choice" in
+			1)
+				echo "🐍 Setting up MkDocs..."
+				maybe_copy_docs_starter
+				chmod +x ./bootstrap/scripts/install-mkdocs.sh || true
+				if yesno "Install MkDocs in .venv now?" Y; then
+					bash ./bootstrap/scripts/install-mkdocs.sh || true
+				fi
+				;;
+			2)
+				echo "⚡ Setting up VitePress..."
+				chmod +x ./bootstrap/scripts/setup-docs.sh || true
+				bash ./bootstrap/scripts/setup-docs.sh vitepress || true
+				;;
+			3)
+				echo "⚛️ Setting up Docusaurus..."
+				chmod +x ./bootstrap/scripts/setup-docs.sh || true
+				bash ./bootstrap/scripts/setup-docs.sh docusaurus || true
+				;;
+			4)
+				echo "📝 Setting up simple markdown docs..."
+				chmod +x ./bootstrap/scripts/setup-docs.sh || true
+				bash ./bootstrap/scripts/setup-docs.sh simple || true
+				;;
+			*)
+				echo "Invalid choice, skipping docs setup."
+				;;
+		esac
+		
 		if yesno "Enable GitHub Pages to publish docs (requires gh + origin)?" N; then
 			enable_pages_via_gh || true
 		fi
-		if yesno "Run doctor and build docs now?" N; then
+		
+		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" N; then
 			bash bootstrap/scripts/iterate.sh doctor || true
 			ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
 		fi
