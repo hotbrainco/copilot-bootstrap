@@ -48,21 +48,38 @@ main() {
   if is_tty; then
     if ! yesno "Proceed with update?" Y; then
       echo "Aborted. No changes made."
-      exit 0
+      return 0
     fi
   fi
 
-  local TMPDIR
-  TMPDIR=$(mktemp -d)
-  trap 'rm -rf "$TMPDIR"' EXIT
+  local WORKDIR
+  WORKDIR=$(mktemp -d 2>/dev/null || mktemp -d -t cb-update)
+  if [[ -z "$WORKDIR" || ! -d "$WORKDIR" ]]; then
+    echo "Failed to create temp directory" >&2
+    exit 1
+  fi
+  cleanup() { rm -rf "$WORKDIR" >/dev/null 2>&1 || true; }
+  trap cleanup EXIT
 
   echo "Downloading ${ZIP_URL}..."
-  curl -fsSL "$ZIP_URL" -o "$TMPDIR/cb.zip"
-  unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
-  local TAG_DIR="${TAG#v}"
-  local SRC="$TMPDIR/copilot-bootstrap-$TAG_DIR"
+  if ! curl -fsSL "$ZIP_URL" -o "$WORKDIR/cb.zip"; then
+    echo "Download failed" >&2
+    exit 1
+  fi
+  if ! unzip -q "$WORKDIR/cb.zip" -d "$WORKDIR"; then
+    echo "Unzip failed" >&2
+    exit 1
+  fi
 
-  # Backup and update bootstrap/scripts
+  # Locate extracted source directory dynamically (handles naming differences)
+  local SRC
+  SRC=$(find "$WORKDIR" -maxdepth 1 -type d -name 'copilot-bootstrap-*' | head -n 1 || true)
+  if [[ -z "$SRC" || ! -d "$SRC" ]]; then
+    echo "ERROR: Could not locate extracted source directory." >&2
+    exit 1
+  fi
+
+  # Backup existing scripts
   if [[ -d ./bootstrap/scripts ]]; then
     local ts
     ts=$(date +%Y%m%d-%H%M%S)
@@ -70,17 +87,21 @@ main() {
     cp -R ./bootstrap/scripts "./.backup/bootstrap-scripts-$ts" || true
     echo "Backed up ./bootstrap/scripts -> ./.backup/bootstrap-scripts-$ts"
   fi
+
   mkdir -p ./bootstrap
   if [[ -d "$SRC/bootstrap/scripts" ]]; then
     rm -rf ./bootstrap/scripts
     cp -R "$SRC/bootstrap/scripts" ./bootstrap/
-  else
+  elif [[ -d "$SRC/scripts" ]]; then
     rm -rf ./bootstrap/scripts
     cp -R "$SRC/scripts" ./bootstrap/
+  else
+    echo "ERROR: Could not find scripts directory in release archive." >&2
+    exit 1
   fi
   chmod +x ./bootstrap/scripts/*.sh 2>/dev/null || true
 
-  # Non-destructive sync of .github and .vscode (add missing files only)
+  # Non-destructive sync for .github and .vscode
   if command -v rsync >/dev/null 2>&1; then
     [[ -d "$SRC/.vscode" ]] && rsync -a --ignore-existing "$SRC/.vscode/" ./.vscode/
     [[ -d "$SRC/.github" ]] && rsync -a --ignore-existing "$SRC/.github/" ./.github/
