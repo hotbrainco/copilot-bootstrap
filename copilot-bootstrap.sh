@@ -43,6 +43,23 @@ fi
 
 chmod +x ./bootstrap/scripts/iterate.sh || true
 
+# Patch references in copied config to new bootstrap path (back-compat)
+if [[ -f ./.vscode/tasks.json ]]; then
+	if command -v sed >/dev/null 2>&1; then
+		sed -i.bak 's#"scripts/iterate.sh"#"bootstrap/scripts/iterate.sh"#g' ./.vscode/tasks.json || true
+		rm -f ./.vscode/tasks.json.bak || true
+	fi
+fi
+
+if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
+	if command -v sed >/dev/null 2>&1; then
+		sed -i.bak 's#bash scripts/iterate.sh#bash bootstrap/scripts/iterate.sh#g' ./.github/workflows/iterate-smoke.yml || true
+		# Also update branch name if workflow still references master
+		sed -i.bak 's#branches: \[ master \]#branches: [ main ]#g' ./.github/workflows/iterate-smoke.yml || true
+		rm -f ./.github/workflows/iterate-smoke.yml.bak || true
+	fi
+fi
+
 # Clean up temp
 rm -rf "$TMPDIR"
 

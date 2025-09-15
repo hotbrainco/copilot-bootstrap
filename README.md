@@ -1,18 +1,22 @@
 # Iteration Workflow Starter
 
-## Install (for your app repo)
+##1. Copy `copilot-bootstrap.sh` into your new app folder.
+2. Run this in VS Code's terminal:
+  ```bash
+  bash copilot-bootstrap.sh
+  ```all (for your app repo)
 
 Run this from the root of your app’s repository (new or existing). This copies only the needed files into your repo.
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.0/kickstart_new_repo.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.1/copilot-bootstrap.sh)"
 ```
 
 No pipe-to-shell alternative:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.0/kickstart_new_repo.sh -o kickstart_new_repo.sh
-bash kickstart_new_repo.sh
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.1/copilot-bootstrap.sh -o copilot-bootstrap.sh
+bash copilot-bootstrap.sh
 ```
 
 What gets installed
@@ -24,9 +28,9 @@ Your app’s README at repo root is not overwritten. Bootstrap docs live under `
 ## Setup Scripts
 
 
-`kickstart_new_repo.sh` is a one-time setup helper for copying workflow files into a new app repo.
+`copilot-bootstrap.sh` is a one-time setup helper for copying workflow files into a new app repo.
 
-**Warning:** Do not use or reference `kickstart_new_repo.sh` after initial setup. It is not for app runtime, CI, or automation.
+**Warning:** Do not use or reference `copilot-bootstrap.sh` after initial setup. It is not for app runtime, CI, or automation.
 
 ### Usage
 
