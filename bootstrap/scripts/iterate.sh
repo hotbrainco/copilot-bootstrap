@@ -186,6 +186,12 @@ preflight() {
 	in_git_repo && git_repo="yes" || git_repo="no"
 	has_origin_remote && remote="yes" || remote="no"
 	have_cmd gh && gh_ok="yes" || gh_ok="no"
+
+	# Prefer GitHub CLI for credentials to avoid macOS Keychain prompts
+	if [[ "$gh_ok" == "yes" ]] && gh auth status >/dev/null 2>&1; then
+		# Set locally (repo-level) without clobbering user-global config
+		git config credential.helper '!gh auth git-credential' || true
+	fi
 	echo "==> Preflight"
 	echo "Package manager: $pm"
 	echo "Docs system: $docs"
