@@ -64,6 +64,19 @@ has_pkg_script() {
 	[[ -f package.json ]] && grep -q "\"$name\"\\s*:" package.json
 }
 
+# Push using GitHub CLI credential helper when available, non-interactive
+git_push_with_gh() {
+	local branch="$1"
+	if have_cmd gh; then
+		GIT_TERMINAL_PROMPT=0 git \
+			-c credential.helper= \
+			-c credential.helper='!gh auth git-credential' \
+			push -u origin "$branch"
+	else
+		git push -u origin "$branch"
+	fi
+}
+
 	# Optional JSON config loader (.iterate.json). Requires jq if present.
 	load_config() {
 		local cfg=".iterate.json"
@@ -353,7 +366,11 @@ step_git() {
 
 	local branch; branch="$(ensure_branch)"
 		if has_origin_remote; then
-			run_cmd git push -u origin "$branch"
+			if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
+				echo "DRY-RUN: git push -u origin $branch (using gh credentials if available)"
+			else
+				git_push_with_gh "$branch"
+			fi
 		else
 			warn "Push skipped (no origin remote)"
 		fi
