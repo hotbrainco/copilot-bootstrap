@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# Ensure git never prompts interactively (avoids macOS Keychain popups)
+export GIT_TERMINAL_PROMPT=0
 
 # ---------- Configuration (env > .iterate.json > defaults) ----------
 # We intentionally do NOT set shell defaults here to avoid masking .iterate.json values.
@@ -64,6 +66,26 @@ has_pkg_script() {
 	[[ -f package.json ]] && grep -q "\"$name\"\\s*:" package.json
 }
 
+<<<<<<< HEAD
+# Configure repo-local GitHub CLI credential helper (safe no-op if not in a repo)
+configure_git_auth() {
+	if have_cmd gh; then
+		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+			git config --local --unset-all credential.helper 2>/dev/null || true
+			git config --local credential.helper '!gh auth git-credential' || true
+		fi
+	fi
+}
+
+# Push using gh credential helper in a non-interactive way
+git_push_with_gh() {
+	local branch="$1"
+	if have_cmd gh; then
+		git \
+		  -c credential.helper= \
+		  -c credential.helper='!gh auth git-credential' \
+		  push -u origin "$branch"
+=======
 # Push using GitHub CLI credential helper when available, non-interactive
 git_push_with_gh() {
 	local branch="$1"
@@ -72,6 +94,7 @@ git_push_with_gh() {
 			-c credential.helper= \
 			-c credential.helper='!gh auth git-credential' \
 			push -u origin "$branch"
+>>>>>>> origin/main
 	else
 		git push -u origin "$branch"
 	fi
@@ -124,42 +147,40 @@ detect_docs_system() {
 	echo "none"
 }
 
-	in_git_repo() {
-		git rev-parse --is-inside-work-tree >/dev/null 2>&1
+	has_pkg_script() {
+		local name="$1"
+		[[ -f package.json ]] && grep -q "\"$name\"\\s*:" package.json
 	}
 
-	has_origin_remote() {
-		git remote get-url origin >/dev/null 2>&1
+	# Configure repo-local GitHub CLI credential helper (safe no-op if not in a repo)
+	configure_git_auth() {
+		if have_cmd gh; then
+			if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+				git config --local --unset-all credential.helper 2>/dev/null || true
+				git config --local credential.helper '!gh auth git-credential' || true
+			fi
+		fi
 	}
 
-repo_slug() {
-	local url
-	url=$(git remote get-url origin 2>/dev/null || true)
-	[[ -z "$url" ]] && return 1
-	case "$url" in
-		git@github.com:*)
-			echo "${url#git@github.com:}" | sed 's/\.git$//' ;;
-		https://github.com/*)
-			echo "${url#https://github.com/}" | sed 's/\.git$//' ;;
-		*)
-			return 1 ;;
-	esac
-}
-
-pages_enabled() {
-	have_cmd gh || return 1
-	has_origin_remote || return 1
-	local slug
+	# Push using GitHub CLI credential helper when available, non-interactive
+	git_push_with_gh() {
+		local branch="$1"
+		if have_cmd gh; then
+			GIT_TERMINAL_PROMPT=0 git \
+				-c credential.helper= \
+				-c credential.helper='!gh auth git-credential' \
+				push -u origin "$branch"
 	slug=$(repo_slug) || return 1
-	gh api "repos/${slug}/pages" >/dev/null 2>&1
-}
-
-enable_pages() {
-	have_cmd gh || return 1
-	has_origin_remote || return 1
+	if [[ -n "${GITHUB_TOKEN-}" ]]; then
+		curl -fsS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+			"https://api.github.com/repos/${slug}/pages" >/dev/null 2>&1
+	elif have_cmd gh; then
+		gh api "repos/${slug}/pages" >/dev/null 2>&1
+	pages_enabled() {
 	local slug
 	slug=$(repo_slug) || return 1
 	run_cmd gh api --method PUT "repos/${slug}/pages" -f build_type=workflow
+>>>>>>> origin/main
 }
 
 git_has_changes() {
@@ -169,7 +190,6 @@ git_has_changes() {
 }
 
 ensure_branch() {
-	local current; current="$(git rev-parse --abbrev-ref HEAD)"
 	if [[ "$current" == "HEAD" ]]; then
 		echo "Detached HEAD; staying on current commit"
 		return
@@ -295,14 +315,21 @@ step_docs() {
 			if have_cmd "mkdocs"; then
 				run_cmd mkdocs build
 				# Suggest enabling GitHub Pages (Actions) for publishing
-				if have_cmd gh && has_origin_remote; then
+				if has_origin_remote; then
 					if pages_enabled; then
 						echo "GitHub Pages is enabled for this repository."
 					else
 						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
-						echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						if [[ -n "${GITHUB_TOKEN-}" ]]; then
+							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\
+  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
+						elif have_cmd gh; then
+							echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						else
+							echo "  (set GITHUB_TOKEN or install gh)"
+						fi
 						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
-							enable_pages || warn "Failed to enable GitHub Pages via gh"
+							enable_pages || warn "Failed to enable GitHub Pages"
 						fi
 					fi
 				fi
@@ -367,7 +394,11 @@ step_git() {
 	local branch; branch="$(ensure_branch)"
 		if has_origin_remote; then
 			if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
+<<<<<<< HEAD
+				echo "DRY-RUN: git push -u origin $branch (gh credentials if available)"
+=======
 				echo "DRY-RUN: git push -u origin $branch (using gh credentials if available)"
+>>>>>>> origin/main
 			else
 				git_push_with_gh "$branch"
 			fi
@@ -416,6 +447,7 @@ step_pr() {
 }
 
 # ---------- Main ----------
+configure_git_auth
 load_config
 # Apply defaults only after env and .iterate.json
 [[ -z "${ITERATE_COMMIT_PREFIX}" ]] && ITERATE_COMMIT_PREFIX="chore:"
