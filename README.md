@@ -190,7 +190,7 @@ To update the bootstrap workflow in an existing project to the latest release (o
 ```bash
 bash bootstrap/scripts/update.sh
 # or pin a version
-BOOTSTRAP_TAG=v0.1.7 bash bootstrap/scripts/update.sh
+BOOTSTRAP_TAG=v0.1.9 bash bootstrap/scripts/update.sh
 ```
 This updates `bootstrap/scripts/*` (with a local backup) and adds any missing files under `.github/` and `.vscode/` without overwriting your changes.
 ## Behavior Overview
