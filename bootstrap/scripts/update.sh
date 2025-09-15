@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Defensive: refuse to operate if TMPDIR is suspiciously root-like
+if [[ "${TMPDIR:-}" == "/" || "${TMPDIR:-}" == "/tmp" ]]; then
+  echo "Refusing to run with unsafe TMPDIR='${TMPDIR:-}'" >&2
+  unset TMPDIR
+fi
+
 REPO="${BOOTSTRAP_REPO:-hotbrainco/copilot-bootstrap}"
 
 is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
@@ -52,15 +58,29 @@ main() {
     fi
   fi
 
-  local TMPDIR
-  TMPDIR=$(mktemp -d)
-  trap 'rm -rf "$TMPDIR"' EXIT
+  local WORKDIR
+  WORKDIR=$(mktemp -d 2>/dev/null || mktemp -d -t cbupd)
+  # Guard: absolute path, under a writable temp location, not empty
+  case "$WORKDIR" in
+    /var/folders/*|/private/var/folders/*|/tmp/*|/private/tmp/*) ;; 
+    *) echo "Unexpected work dir pattern: $WORKDIR" >&2; exit 1;;
+  esac
+  cleanup() {
+    [[ -n "${WORKDIR:-}" && -d "$WORKDIR" ]] && rm -rf "$WORKDIR" || true
+  }
+  trap cleanup EXIT INT TERM
 
   echo "Downloading ${ZIP_URL}..."
-  curl -fsSL "$ZIP_URL" -o "$TMPDIR/cb.zip"
-  unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
+  curl -fsSL "$ZIP_URL" -o "$WORKDIR/cb.zip"
+  unzip -q "$WORKDIR/cb.zip" -d "$WORKDIR"
   local TAG_DIR="${TAG#v}"
-  local SRC="$TMPDIR/copilot-bootstrap-$TAG_DIR"
+  local SRC
+  SRC="$WORKDIR/copilot-bootstrap-$TAG_DIR"
+  if [[ ! -d "$SRC" ]]; then
+    # Fallback: detect first directory matching repo name
+    SRC=$(find "$WORKDIR" -maxdepth 1 -type d -name 'copilot-bootstrap-*' | head -n1 || true)
+  fi
+  [[ -d "$SRC" ]] || { echo "Extracted source directory not found" >&2; exit 1; }
 
   # Backup and update bootstrap/scripts
   if [[ -d ./bootstrap/scripts ]]; then
@@ -71,27 +91,39 @@ main() {
     echo "Backed up ./bootstrap/scripts -> ./.backup/bootstrap-scripts-$ts"
   fi
   mkdir -p ./bootstrap
-  if [[ -d "$SRC/bootstrap/scripts" ]]; then
-    rm -rf ./bootstrap/scripts
-    cp -R "$SRC/bootstrap/scripts" ./bootstrap/
+  if [[ "${BOOTSTRAP_DRY_RUN:-}" == "true" ]]; then
+    echo "[DRY-RUN] Would replace ./bootstrap/scripts from release contents"
   else
-    rm -rf ./bootstrap/scripts
-    cp -R "$SRC/scripts" ./bootstrap/
+    if [[ -d "$SRC/bootstrap/scripts" ]]; then
+      rm -rf ./bootstrap/scripts
+      cp -R "$SRC/bootstrap/scripts" ./bootstrap/
+    else
+      rm -rf ./bootstrap/scripts
+      cp -R "$SRC/scripts" ./bootstrap/
+    fi
+    chmod +x ./bootstrap/scripts/*.sh 2>/dev/null || true
   fi
-  chmod +x ./bootstrap/scripts/*.sh 2>/dev/null || true
 
   # Non-destructive sync of .github and .vscode (add missing files only)
-  if command -v rsync >/dev/null 2>&1; then
-    [[ -d "$SRC/.vscode" ]] && rsync -a --ignore-existing "$SRC/.vscode/" ./.vscode/
-    [[ -d "$SRC/.github" ]] && rsync -a --ignore-existing "$SRC/.github/" ./.github/
+  if [[ "${BOOTSTRAP_DRY_RUN:-}" == "true" ]]; then
+    echo "[DRY-RUN] Would add missing files to .vscode/ and .github/"
   else
-    [[ -d "$SRC/.vscode" ]] && mkdir -p ./.vscode && (cd "$SRC/.vscode" && find . -type f -print0 | xargs -0 -I{} sh -c 'dst="../../.vscode/{}"; [ -e "$dst" ] || (mkdir -p "$(dirname "$dst")" && cp "{}" "$dst")')
-    [[ -d "$SRC/.github" ]] && mkdir -p ./.github && (cd "$SRC/.github" && find . -type f -print0 | xargs -0 -I{} sh -c 'dst="../../.github/{}"; [ -e "$dst" ] || (mkdir -p "$(dirname "$dst")" && cp "{}" "$dst")')
+    if command -v rsync >/dev/null 2>&1; then
+      [[ -d "$SRC/.vscode" ]] && rsync -a --ignore-existing "$SRC/.vscode/" ./.vscode/
+      [[ -d "$SRC/.github" ]] && rsync -a --ignore-existing "$SRC/.github/" ./.github/
+    else
+      [[ -d "$SRC/.vscode" ]] && mkdir -p ./.vscode && (cd "$SRC/.vscode" && find . -type f -print0 | xargs -0 -I{} sh -c 'dst="../../.vscode/{}"; [ -e "$dst" ] || (mkdir -p "$(dirname "$dst")" && cp "{}" "$dst")')
+      [[ -d "$SRC/.github" ]] && mkdir -p ./.github && (cd "$SRC/.github" && find . -type f -print0 | xargs -0 -I{} sh -c 'dst="../../.github/{}"; [ -e "$dst" ] || (mkdir -p "$(dirname "$dst")" && cp "{}" "$dst")')
+    fi
   fi
 
-  echo "✅ Update complete. Next steps:"
-  echo "  - Review backups under ./.backup/ if needed"
-  echo "  - Run: bash bootstrap/scripts/iterate.sh doctor"
+  if [[ "${BOOTSTRAP_DRY_RUN:-}" == "true" ]]; then
+    echo "✅ Dry-run complete (no changes written)."
+  else
+    echo "✅ Update complete. Next steps:"
+    echo "  - Review backups under ./.backup/ if needed"
+    echo "  - Run: bash bootstrap/scripts/iterate.sh doctor"
+  fi
 }
 
 main "$@"
