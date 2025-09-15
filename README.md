@@ -182,6 +182,17 @@ Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are a
 ```bash
 ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
 ```
+
+## Upgrade
+
+To update the bootstrap workflow in an existing project to the latest release (or a specific tag), use:
+
+```bash
+bash bootstrap/scripts/update.sh
+# or pin a version
+BOOTSTRAP_TAG=v0.1.7 bash bootstrap/scripts/update.sh
+```
+This updates `bootstrap/scripts/*` (with a local backup) and adds any missing files under `.github/` and `.vscode/` without overwriting your changes.
 ## Behavior Overview
 
 - Detects package manager: pnpm → yarn → npm.

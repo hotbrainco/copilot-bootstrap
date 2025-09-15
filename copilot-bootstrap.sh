@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO="hotbrainco/copilot-bootstrap"
-TAG="${BOOTSTRAP_TAG:-v0.1.6}"
+TAG="${BOOTSTRAP_TAG:-v0.1.7}"
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 
 # Interactive helpers
