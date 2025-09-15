@@ -189,7 +189,24 @@ fi
 			https://github.com/*) slug="${url#https://github.com/}"; slug="${slug%.git}" ;;
 			*) echo "Unrecognized origin; skipping Pages enable"; return 1 ;;
 		esac
-		gh api --method PUT "repos/${slug}/pages" -f build_type=workflow && echo "✅ Enabled GitHub Pages (Actions)" || echo "WARN: Failed to enable Pages"
+		# Try idempotent PUT first; if 404, attempt create (POST) then configure (PUT)
+		if gh api --method PUT "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
+			echo "✅ Enabled GitHub Pages (Actions)"
+			return 0
+		fi
+		# Capture error to detect 404 specifically
+		local put_status
+		put_status=$(gh api --method PUT "repos/${slug}/pages" -f build_type=workflow 2>&1 >/dev/null || true)
+		if echo "$put_status" | grep -qi "404"; then
+			# Create then configure
+			if gh api --method POST "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
+				if gh api --method PUT "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
+					echo "✅ GitHub Pages created and configured (Actions workflow)"
+					return 0
+				fi
+			fi
+		fi
+		echo "WARN: Failed to enable Pages (see gh api repos/${slug}/pages)"
 	}
 
 	if yesno "Set up documentation now?" N; then

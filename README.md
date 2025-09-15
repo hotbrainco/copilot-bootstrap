@@ -183,6 +183,25 @@ Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are a
 ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
 ```
 
+First-time GitHub Pages enablement:
+- A brand-new repository without an existing Pages site can return a 404 on the initial `PUT repos/<slug>/pages` call.
+- The bootstrap script now retries by creating (POST) then configuring (PUT) the site automatically.
+- If you need to do it manually (older version), run either:
+  - With `gh`:
+    ```bash
+    gh api --method POST "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pages" -f build_type=workflow
+    gh api --method PUT  "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pages" -f build_type=workflow
+    ```
+  - With `curl` (needs `GITHUB_TOKEN` with `repo` scope):
+    ```bash
+    REPO_SLUG="owner/repo"  # e.g. myorg/myrepo
+    API="https://api.github.com/repos/${REPO_SLUG}/pages"
+    curl -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+      -d '{"build_type":"workflow"}' "$API"
+    curl -X PUT  -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+      -d '{"build_type":"workflow"}' "$API"
+    ```
+
 ## Upgrade
 
 To update the bootstrap workflow in an existing project to the latest release (or a specific tag), use:
