@@ -11,6 +11,7 @@ What this does:
 - Copies `bootstrap/scripts/iterate.sh` and helpers into `./bootstrap/`
 - Adds `.iterate.json`, `ROADMAP.md`, `.vscode/`, `.github/` (preserving existing files)
 - Prints next-step commands to run the iteration loop
+- Prompts you to confirm before copying files
 
 Prefer a pinned version or no pipe-to-shell? See below.
 
