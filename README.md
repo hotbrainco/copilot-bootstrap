@@ -13,6 +13,15 @@ What this does:
 - Prints next-step commands to run the iteration loop
 - Prompts you to confirm before copying files
 
+Doctor (preflight):
+
+- What it is: a read-only check that detects your stack (package manager, docs, tests, git/gh) and prints what the iteration loop would do. It doesn’t change your repo.
+- Run it right after install:
+
+```bash
+bash bootstrap/scripts/iterate.sh doctor
+```
+
 Prefer a pinned version or no pipe-to-shell? See below.
 
 ## Troubleshooting
