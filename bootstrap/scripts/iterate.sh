@@ -188,9 +188,11 @@ preflight() {
 	have_cmd gh && gh_ok="yes" || gh_ok="no"
 
 	# Prefer GitHub CLI for credentials to avoid macOS Keychain prompts
-	if [[ "$gh_ok" == "yes" ]] && gh auth status >/dev/null 2>&1; then
-		# Set locally (repo-level) without clobbering user-global config
-		git config credential.helper '!gh auth git-credential' || true
+	if [[ "$gh_ok" == "yes" ]]; then
+		# Force repo-local helper to gh and clear any other helpers (e.g., osxkeychain)
+		git config --local --unset-all credential.helper 2>/dev/null || true
+		git config --local credential.helper '!gh auth git-credential' || true
+		echo "Auth: using gh credential helper (repo-local)"
 	fi
 	echo "==> Preflight"
 	echo "Package manager: $pm"
