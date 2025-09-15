@@ -24,3 +24,10 @@ Conventions
 Notes
 - If the "iterate" task is missing, check this bootstrap file and offer to (re)create .vscode/tasks.json and scripts/iterate.sh.
 - If #file:ROADMAP.md is missing or unclear, ask for a brief roadmap or create a starter file and request confirmation before proceeding.
+
+Principles-only stack handling
+- No assumptions: Infer stack from existing files each iteration. If ambiguous, ask once, then proceed. Do not persist a stack choice in the repo unless explicitly requested.
+- Ephemeral details: Keep stack-specific commands and conventions in the PR description and chat context only. Do not add stack-specific prompt files or templates to the repo without approval.
+- Late binding + safety: Prefer generic commands. Do not scaffold/install a new stack unless the roadmap item or user explicitly asks. Never mix package managers or toolchains.
+- Detection discipline: If multiple conflicting signals are found (e.g., both pnpm and yarn lockfiles), stop and ask which to use. Default to soft-skip over guessing installs.
+- Drift control: Record current working assumptions in the PR body. If they change, update the PR. Do not create or modify stack-specific config files unless directed.

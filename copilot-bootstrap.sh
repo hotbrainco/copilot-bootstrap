@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO="hotbrainco/copilot-bootstrap"
-TAG="${BOOTSTRAP_TAG:-v0.1.0}"
+TAG="${BOOTSTRAP_TAG:-v0.1.1}"
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 TMPDIR="$(mktemp -d)"
 
@@ -58,6 +58,30 @@ if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 		sed -i.bak 's#branches: \[ master \]#branches: [ main ]#g' ./.github/workflows/iterate-smoke.yml || true
 		rm -f ./.github/workflows/iterate-smoke.yml.bak || true
 	fi
+fi
+
+# Create a placeholder README if one doesn't exist
+if [[ ! -f README.md ]]; then
+	cat > README.md <<'EOF'
+# My Project
+
+_Replace this with a real README!_
+
+This project was set up with the [Copilot Bootstrap](https://github.com/hotbrainco/copilot-bootstrap) iteration workflow.
+
+## Quick Start
+
+To run the automated development loop:
+
+1.  Open the Command Palette in VS Code (`Cmd+Shift+P` or `Ctrl+Shift+P`).
+2.  Run the "Tasks: Run Build Task" command.
+3.  Select `iterate`.
+
+This will build, test, update docs, commit, push, and create a PR.
+
+See `bootstrap/README.md` for more details on the workflow.
+EOF
+	echo "📝 Created placeholder README.md. You should edit it!"
 fi
 
 # Clean up temp
