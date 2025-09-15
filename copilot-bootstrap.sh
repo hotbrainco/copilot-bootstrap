@@ -126,7 +126,6 @@ fi
 			ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
 		fi
 	fi
-
 # Create a placeholder README if one doesn't exist
 if [[ ! -f README.md ]]; then
 	cat > README.md <<'EOF'
