@@ -115,6 +115,12 @@ One-time setup:
 - In your repo settings → Pages, set "Source" = GitHub Actions.
 - Push to `main` to trigger a build, or run the workflow manually.
 
+Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are available), set:
+
+```bash
+ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
+```
+
 ## Behavior Overview
 
 - Detects package manager: pnpm → yarn → npm.
@@ -171,6 +177,7 @@ Environment variables:
 - `ITERATE_DRY_RUN`: `true` to print actions without running
 - `ITERATE_SKIP_GIT`: `true` to skip commit/push
 - `ITERATE_SKIP_PR`: `true` to skip PR creation/update
+- `ITERATE_PAGES_ENABLE`: `true` to auto-enable GitHub Pages (Actions) during the docs step (requires `gh` and `origin`)
 
 Optional `.iterate.json` example:
 
