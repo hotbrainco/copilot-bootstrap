@@ -66,7 +66,6 @@ has_pkg_script() {
 	[[ -f package.json ]] && grep -q "\"$name\"\\s*:" package.json
 }
 
-<<<<<<< HEAD
 # Configure repo-local GitHub CLI credential helper (safe no-op if not in a repo)
 configure_git_auth() {
 	if have_cmd gh; then
@@ -77,15 +76,6 @@ configure_git_auth() {
 	fi
 }
 
-# Push using gh credential helper in a non-interactive way
-git_push_with_gh() {
-	local branch="$1"
-	if have_cmd gh; then
-		git \
-		  -c credential.helper= \
-		  -c credential.helper='!gh auth git-credential' \
-		  push -u origin "$branch"
-=======
 # Push using GitHub CLI credential helper when available, non-interactive
 git_push_with_gh() {
 	local branch="$1"
@@ -94,7 +84,6 @@ git_push_with_gh() {
 			-c credential.helper= \
 			-c credential.helper='!gh auth git-credential' \
 			push -u origin "$branch"
->>>>>>> origin/main
 	else
 		git push -u origin "$branch"
 	fi
@@ -162,24 +151,12 @@ detect_docs_system() {
 		fi
 	}
 
-	# Push using GitHub CLI credential helper when available, non-interactive
-	git_push_with_gh() {
-		local branch="$1"
-		if have_cmd gh; then
-			GIT_TERMINAL_PROMPT=0 git \
-				-c credential.helper= \
-				-c credential.helper='!gh auth git-credential' \
-				push -u origin "$branch"
-	slug=$(repo_slug) || return 1
-	if [[ -n "${GITHUB_TOKEN-}" ]]; then
-		curl -fsS -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
-			"https://api.github.com/repos/${slug}/pages" >/dev/null 2>&1
-	elif have_cmd gh; then
-		gh api "repos/${slug}/pages" >/dev/null 2>&1
-	pages_enabled() {
-	local slug
-	slug=$(repo_slug) || return 1
-	run_cmd gh api --method PUT "repos/${slug}/pages" -f build_type=workflow
+<<<<<<< HEAD
+repo_slug() {
+	local url
+	url=$(git remote get-url origin 2>/dev/null || true)
+	[[ -z "$url" ]] && return 1
+	}
 >>>>>>> origin/main
 }
 
@@ -315,11 +292,20 @@ step_docs() {
 			if have_cmd "mkdocs"; then
 				run_cmd mkdocs build
 				# Suggest enabling GitHub Pages (Actions) for publishing
+<<<<<<< HEAD
+				if have_cmd gh && has_origin_remote; then
+=======
 				if has_origin_remote; then
+>>>>>>> origin/main
 					if pages_enabled; then
 						echo "GitHub Pages is enabled for this repository."
 					else
 						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
+<<<<<<< HEAD
+						echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
+							enable_pages || warn "Failed to enable GitHub Pages via gh"
+=======
 						if [[ -n "${GITHUB_TOKEN-}" ]]; then
 							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\
   -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
@@ -330,6 +316,7 @@ step_docs() {
 						fi
 						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
 							enable_pages || warn "Failed to enable GitHub Pages"
+>>>>>>> origin/main
 						fi
 					fi
 				fi
