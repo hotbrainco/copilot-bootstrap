@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO="hotbrainco/copilot-bootstrap"
-TAG="${BOOTSTRAP_TAG:-v0.1.1}"
+TAG="${BOOTSTRAP_TAG:-v0.1.3}"
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 TMPDIR="$(mktemp -d)"
 
@@ -51,6 +51,17 @@ if [[ -f ./.vscode/tasks.json ]]; then
 	fi
 fi
 
+
+# Prefer GitHub CLI for git credentials in this repo to avoid Keychain prompts
+if command -v gh >/dev/null 2>&1; then
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		# Configure at repo scope; do not modify global user config
+		git config --local --unset-all credential.helper 2>/dev/null || true
+		git config --local credential.helper '!gh auth git-credential' || true
+		echo "🔐 Configured git to use GitHub CLI credentials for this repo"
+	fi
+fi
+
 if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 	if command -v sed >/dev/null 2>&1; then
 		sed -i.bak 's#bash scripts/iterate.sh#bash bootstrap/scripts/iterate.sh#g' ./.github/workflows/iterate-smoke.yml || true
@@ -60,6 +71,61 @@ if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 	fi
 fi
 
+	# --- Optional interactive docs setup ---
+	is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 0 && -t 1 ]]; }
+	yesno() {
+		local prompt="$1" default="${2:-N}" ans
+		if ! is_tty; then return 1; fi
+		read -r -p "$prompt [y/N] " ans || true
+		ans=${ans:-$default}
+		[[ "$ans" == "y" || "$ans" == "Y" ]]
+	}
+
+	maybe_copy_docs_starter() {
+		local copied="false"
+		if [[ -f "$SRC/mkdocs.yml" ]]; then
+			if [[ ! -f mkdocs.yml ]]; then
+				cp "$SRC/mkdocs.yml" ./
+				copied="true"
+			fi
+		fi
+		if [[ -d "$SRC/docs" ]]; then
+			if [[ ! -d ./docs ]]; then
+				cp -R "$SRC/docs" ./
+				copied="true"
+			fi
+		fi
+		[[ "$copied" == "true" ]] && echo "✅ Added MkDocs starter (mkdocs.yml, docs/)" || true
+	}
+
+	enable_pages_via_gh() {
+		command -v gh >/dev/null 2>&1 || { echo "gh not installed; skipping Pages enable"; return 1; }
+		git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { echo "Not a git repo; skipping Pages enable"; return 1; }
+		git remote get-url origin >/dev/null 2>&1 || { echo "No origin remote; skipping Pages enable"; return 1; }
+		local url slug
+		url=$(git remote get-url origin)
+		case "$url" in
+			git@github.com:*) slug="${url#git@github.com:}"; slug="${slug%.git}" ;;
+			https://github.com/*) slug="${url#https://github.com/}"; slug="${slug%.git}" ;;
+			*) echo "Unrecognized origin; skipping Pages enable"; return 1 ;;
+		esac
+		gh api --method PUT "repos/${slug}/pages" -f build_type=workflow && echo "✅ Enabled GitHub Pages (Actions)" || echo "WARN: Failed to enable Pages"
+	}
+
+	if yesno "Set up a MkDocs documentation site now?" N; then
+		maybe_copy_docs_starter
+		chmod +x ./bootstrap/scripts/install-mkdocs.sh || true
+		if yesno "Install MkDocs locally now (pipx/pip --user)?" N; then
+			bash ./bootstrap/scripts/install-mkdocs.sh || true
+		fi
+		if yesno "Enable GitHub Pages to publish docs (requires gh + origin)?" N; then
+			enable_pages_via_gh || true
+		fi
+		if yesno "Run doctor and build docs now?" N; then
+			bash bootstrap/scripts/iterate.sh doctor || true
+			ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
+		fi
+	fi
 # Create a placeholder README if one doesn't exist
 if [[ ! -f README.md ]]; then
 	cat > README.md <<'EOF'
