@@ -6,7 +6,12 @@
   bash copilot-bootstrap.sh
   ```
 
-Run this from the root of your app’s repository (new or existing). This copies only the needed files into your repo.
+Run this from the root of your app’s repository (new or existing). This copies only the needed fi## Troubleshooting
+
+- Missing tools: enable strict mode to fail explicitly (`ITERATE_STRICT=true`), or install the required tool.
+- Unexpected git behavior: ensure you're on a branch and have `origin` configured.
+- PR step errors: verify you're authenticated with `gh auth login` and have push permissions.
+- Note: The `iterate` task automatically creates a feature branch when run from `main`/`master` to avoid conflicts.
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.3/copilot-bootstrap.sh)"
