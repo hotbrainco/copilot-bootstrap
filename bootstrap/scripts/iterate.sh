@@ -161,11 +161,30 @@ pages_enabled() {
 }
 enable_pages() {
 	local slug; slug="$(repo_slug)" || return 1
+	if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
+		echo "DRY-RUN: would enable GitHub Pages via PUT/POST"
+		return 0
+	fi
 	if have_cmd gh; then
-		run_cmd gh api --method PUT "repos/$slug/pages" -f build_type=workflow && return 0
+		if gh api --method PUT "repos/$slug/pages" -f build_type=workflow >/dev/null 2>&1; then
+			echo "GitHub Pages enabled (Actions workflow)"
+			return 0
+		fi
+		if gh api --method POST "repos/$slug/pages" -f build_type=workflow >/dev/null 2>&1; then
+			gh api --method PUT "repos/$slug/pages" -f build_type=workflow >/dev/null 2>&1 && { echo "GitHub Pages created and configured"; return 0; }
+		fi
 	fi
 	if [[ -n "${GITHUB_TOKEN-}" ]]; then
-		run_cmd curl -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d '{"build_type":"workflow"}' "https://api.github.com/repos/$slug/pages" && return 0
+		local api="https://api.github.com/repos/$slug/pages" code
+		code=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d '{"build_type":"workflow"}' "$api") || true
+		if [[ "$code" =~ ^2 ]]; then echo "GitHub Pages enabled (Actions workflow)"; return 0; fi
+		if [[ "$code" == "404" ]]; then
+			code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d '{"build_type":"workflow"}' "$api") || true
+			if [[ "$code" =~ ^2 ]]; then
+				code=$(curl -s -o /dev/null -w "%{http_code}" -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d '{"build_type":"workflow"}' "$api") || true
+				[[ "$code" =~ ^2 ]] && { echo "GitHub Pages created and configured"; return 0; }
+			fi
+		fi
 	fi
 	return 1
 }
@@ -310,8 +329,12 @@ step_docs() {
 						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
 						if [[ -n "${GITHUB_TOKEN-}" ]]; then
 							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\\n+  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
+							echo "  # If 404 Not Found, create then update:"
+							echo "  curl -X POST -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\\n+  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
 						elif have_cmd gh; then
 							echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+							echo "  # If 404 Not Found, create then update:"
+							echo "  gh api --method POST repos/$(repo_slug)/pages -f build_type=workflow"
 						else
 							echo "  (set GITHUB_TOKEN or install gh)"
 						fi
