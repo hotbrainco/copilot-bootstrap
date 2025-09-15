@@ -13,13 +13,7 @@ Status buckets
 - Done: Completed items with links to PRs.
 
 ## Now
-- [ ] Harden iteration loop and automation
-  - Why: Ensure the default "iterate" path is reliable, reducing manual intervention and enabling autonomous runs.
-  - Acceptance:
-    - [ ] Docs step runs without syntax errors and soft-skips when no docs are present
-    - [ ] VS Code exposes an "iterate:doctor" task
-    - [ ] A no-git iteration runs green locally
-  - Tech notes: Edit `scripts/iterate.sh` (`step_docs`), update `.vscode/tasks.json`. Consider adding CI smoke in a follow-up.
+// (empty — pick from Next)
 
 ## Next
 - [ ] Example: Improve error handling in engine-runner
@@ -31,4 +25,9 @@ Status buckets
 - [ ] Example: Migrate docs to Docusaurus v3
 
 ## Done
-- [ ] (autofilled by humans/Copilot when items complete; include PR URL)
+- [x] Harden iteration loop and automation — PR: https://github.com/hotbrainco/copilot-bootstrap/pull/6
+  - Acceptance:
+    - Docs step soft-skips when MkDocs isn’t installed
+    - VS Code exposes an `iterate:doctor` task
+    - No-git iteration runs green locally
+  - Notes: Fixed merge markers in `bootstrap/scripts/iterate.sh`, added helpers, improved docs flow, and bumped installer default tag to `v0.1.5`.

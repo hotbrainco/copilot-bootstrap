@@ -136,28 +136,38 @@ detect_docs_system() {
 	echo "none"
 }
 
-	has_pkg_script() {
-		local name="$1"
-		[[ -f package.json ]] && grep -q "\"$name\"\\s*:" package.json
-	}
-
-	# Configure repo-local GitHub CLI credential helper (safe no-op if not in a repo)
-	configure_git_auth() {
-		if have_cmd gh; then
-			if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-				git config --local --unset-all credential.helper 2>/dev/null || true
-				git config --local credential.helper '!gh auth git-credential' || true
-			fi
-		fi
-	}
-
-<<<<<<< HEAD
+# ---------- Git helpers ----------
+in_git_repo() { git rev-parse --is-inside-work-tree >/dev/null 2>&1; }
+has_origin_remote() { git remote get-url origin >/dev/null 2>&1; }
+current_branch() { git rev-parse --abbrev-ref HEAD 2>/dev/null || true; }
 repo_slug() {
-	local url
+	local url slug
 	url=$(git remote get-url origin 2>/dev/null || true)
 	[[ -z "$url" ]] && return 1
-	}
->>>>>>> origin/main
+	slug="${url#git@github.com:}"
+	slug="${slug#https://github.com/}"
+	slug="${slug%.git}"
+	echo "$slug"
+}
+pages_enabled() {
+	local slug; slug="$(repo_slug)" || return 1
+	if have_cmd gh; then
+		gh api -H "Accept: application/vnd.github+json" "repos/$slug/pages" 2>/dev/null | grep -q '"build_type"\s*:\s*"workflow"' && return 0
+	fi
+	if [[ -n "${GITHUB_TOKEN-}" ]]; then
+		curl -sfL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$slug/pages" | grep -q '"build_type"\s*:\s*"workflow"' && return 0
+	fi
+	return 1
+}
+enable_pages() {
+	local slug; slug="$(repo_slug)" || return 1
+	if have_cmd gh; then
+		run_cmd gh api --method PUT "repos/$slug/pages" -f build_type=workflow && return 0
+	fi
+	if [[ -n "${GITHUB_TOKEN-}" ]]; then
+		run_cmd curl -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -d '{"build_type":"workflow"}' "https://api.github.com/repos/$slug/pages" && return 0
+	fi
+	return 1
 }
 
 git_has_changes() {
@@ -167,17 +177,18 @@ git_has_changes() {
 }
 
 ensure_branch() {
-	if [[ "$current" == "HEAD" ]]; then
+	local cur; cur="$(current_branch)"
+	if [[ "$cur" == "HEAD" || -z "$cur" ]]; then
 		echo "Detached HEAD; staying on current commit"
 		return
 	fi
-	if [[ "$current" == "main" || "$current" == "master" ]]; then
+	if [[ "$cur" == "main" || "$cur" == "master" ]]; then
 		local ts; ts="$(date +%Y%m%d-%H%M%S)"
 		local new="iter/${ts}"
 		run_cmd git checkout -b "$new"
 		echo "$new"
 	else
-		echo "$current"
+		echo "$cur"
 	fi
 }
 
@@ -292,23 +303,13 @@ step_docs() {
 			if have_cmd "mkdocs"; then
 				run_cmd mkdocs build
 				# Suggest enabling GitHub Pages (Actions) for publishing
-<<<<<<< HEAD
-				if have_cmd gh && has_origin_remote; then
-=======
 				if has_origin_remote; then
->>>>>>> origin/main
 					if pages_enabled; then
 						echo "GitHub Pages is enabled for this repository."
 					else
 						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
-<<<<<<< HEAD
-						echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
-						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
-							enable_pages || warn "Failed to enable GitHub Pages via gh"
-=======
 						if [[ -n "${GITHUB_TOKEN-}" ]]; then
-							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\
-  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
+							echo "  curl -X PUT -H 'Authorization: Bearer $GITHUB_TOKEN' -H 'Accept: application/vnd.github+json' \\\n+  -d '{\"build_type\":\"workflow\"}' https://api.github.com/repos/$(repo_slug)/pages"
 						elif have_cmd gh; then
 							echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
 						else
@@ -316,7 +317,6 @@ step_docs() {
 						fi
 						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
 							enable_pages || warn "Failed to enable GitHub Pages"
->>>>>>> origin/main
 						fi
 					fi
 				fi
@@ -381,11 +381,7 @@ step_git() {
 	local branch; branch="$(ensure_branch)"
 		if has_origin_remote; then
 			if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
-<<<<<<< HEAD
-				echo "DRY-RUN: git push -u origin $branch (gh credentials if available)"
-=======
 				echo "DRY-RUN: git push -u origin $branch (using gh credentials if available)"
->>>>>>> origin/main
 			else
 				git_push_with_gh "$branch"
 			fi

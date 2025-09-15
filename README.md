@@ -13,21 +13,27 @@ Run this from the root of your app’s repository (new or existing). This copies
 - PR step errors: verify you're authenticated with `gh auth login` and have push permissions.
 - Note: The `iterate` task automatically creates a feature branch when run from `main`/`master` to avoid conflicts.
 
+Latest release (auto):
+
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh)"
+TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh)"
 ```
 
 No pipe-to-shell alternative:
 
+Pinned version (replace vX.Y.Z with a specific tag):
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh -o copilot-bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/vX.Y.Z/copilot-bootstrap.sh -o copilot-bootstrap.sh
 bash copilot-bootstrap.sh
 ```
 
 Tip: To force interactive prompts (even when piping), set `BOOTSTRAP_INTERACTIVE=true`:
 
 ```bash
-BOOTSTRAP_INTERACTIVE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.4/copilot-bootstrap.sh)"
+TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
+BOOTSTRAP_INTERACTIVE=true bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh)"
 ```
 
 What gets installed
