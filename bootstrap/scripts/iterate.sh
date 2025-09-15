@@ -403,6 +403,17 @@ step_pr() {
 		echo "Not a git repository; skipping PR"
 		return
 	fi
+	# Avoid interactive gh prompts by refusing to create PRs from main/master
+	# This commonly causes: "Where should we push the 'main' branch?" in CI/tasks.
+	local cur_branch
+	cur_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+	if [[ "$cur_branch" == "main" || "$cur_branch" == "master" ]]; then
+		echo "On '$cur_branch'; skipping PR to avoid pushing the default branch."
+		echo "Hint: checkout your iteration branch then rerun:"
+		echo "  git checkout iter/<timestamp> && bash bootstrap/scripts/iterate.sh pr"
+		echo "Or skip this step via: ITERATE_SKIP_PR=true"
+		return
+	fi
 	if [[ "${ITERATE_DRY_RUN}" == "true" ]]; then
 		echo "DRY-RUN: gh pr create/update (skipped)"
 		return
