@@ -101,7 +101,6 @@ main() {
   echo "  # Deactivate when done:"
   echo "  deactivate"
   echo ""
-  echo "💡 Tip: Add '$VENV_DIR/' to your .gitignore"
   
   # Check if .gitignore exists and add venv if needed
   if [[ -f .gitignore ]]; then
