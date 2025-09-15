@@ -120,7 +120,6 @@ Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are a
 ```bash
 ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
 ```
-
 ## Behavior Overview
 
 - Detects package manager: pnpm → yarn → npm.
@@ -146,13 +145,13 @@ Quick commands:
 
 ```bash
 # Doctor-only in sandbox (keeps temp folder for inspection)
+bash bootstrap/scripts/sandbox.sh doctor --keep
 
-The preflight runs automatically when you use `iterate`.
+# Full iterate in sandbox; disables git/PR by default
+bash bootstrap/scripts/sandbox.sh iterate --keep
 
-You can also run it via VS Code task: `iterate:doctor`.
-
-If you plan to use MkDocs for docs, install it with:
-
+# Allow git in the sandbox (still isolated; no origin remote)
+bash bootstrap/scripts/sandbox.sh iterate --enable-git --keep
 ```
 
 VS Code tasks:
@@ -160,6 +159,9 @@ VS Code tasks:
 - `sandbox:iterate`: runs the full loop in an isolated copy with git/PR disabled
 
 Nothing in your working tree is modified by sandbox runs.
+
+If you plan to use MkDocs for docs, install it with:
+
 ```bash
 chmod +x bootstrap/scripts/install-mkdocs.sh
 bash bootstrap/scripts/install-mkdocs.sh
