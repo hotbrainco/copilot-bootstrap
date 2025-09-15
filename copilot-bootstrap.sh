@@ -9,13 +9,19 @@ TAG="${BOOTSTRAP_TAG:-v0.1.5}"
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 
 # Interactive helpers
-is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 0 && -t 1 ]]; }
+is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
 yesno() {
 	local prompt="$1" default="${2:-Y}" ans
-	if ! is_tty; then return 1; fi
 	local suffix=" [y/N]"
 	[[ "$default" == "Y" || "$default" == "y" ]] && suffix=" [Y/n]"
-	read -r -p "$prompt$suffix " ans || true
+	if [[ -r /dev/tty ]]; then
+		# Prompt via the controlling terminal when available (works even when stdin is a pipe)
+		read -r -p "$prompt$suffix " ans < /dev/tty || true
+	elif [[ -t 0 || -t 1 ]]; then
+		read -r -p "$prompt$suffix " ans || true
+	else
+		ans="$default"
+	fi
 	ans=${ans:-$default}
 	[[ "$ans" == "y" || "$ans" == "Y" ]]
 }
