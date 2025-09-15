@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-# ---------- Configuration via environment variables ----------
-: "${ITERATE_COMMIT_PREFIX:=chore:}"
-: "${ITERATE_PR_TITLE_PREFIX:=chore:}"
-: "${ITERATE_PR_DRAFT:=true}"           # "true" | "false"
-: "${ITERATE_PR_BASE:=}"                # If empty, gh picks default
-: "${ITERATE_PR_REVIEWERS:=}"           # comma-separated GitHub handles
-: "${ITERATE_SKIP_DOCS:=false}"         # "true" to skip docs step
-: "${ITERATE_RUN_TESTS_IF_PRESENT:=true}" # only runs tests if a script or common tool exists
-: "${ITERATE_STRICT:=false}"            # "true" to fail on missing tools
-: "${ITERATE_STRICT_DOCS:=}"            # override docs strictness; defaults to ITERATE_STRICT
-: "${ITERATE_DRY_RUN:=false}"           # "true" to only print actions
-: "${ITERATE_SKIP_GIT:=false}"          # "true" to skip commit/push
-: "${ITERATE_SKIP_PR:=false}"           # "true" to skip PR creation/update
+# ---------- Configuration (env > .iterate.json > defaults) ----------
+# We intentionally do NOT set shell defaults here to avoid masking .iterate.json values.
+ITERATE_COMMIT_PREFIX="${ITERATE_COMMIT_PREFIX-}"
+ITERATE_PR_TITLE_PREFIX="${ITERATE_PR_TITLE_PREFIX-}"
+ITERATE_PR_DRAFT="${ITERATE_PR_DRAFT-}"
+ITERATE_PR_BASE="${ITERATE_PR_BASE-}"
+ITERATE_PR_REVIEWERS="${ITERATE_PR_REVIEWERS-}"
+ITERATE_SKIP_DOCS="${ITERATE_SKIP_DOCS-}"
+ITERATE_RUN_TESTS_IF_PRESENT="${ITERATE_RUN_TESTS_IF_PRESENT-}"
+ITERATE_STRICT="${ITERATE_STRICT-}"
+ITERATE_STRICT_DOCS="${ITERATE_STRICT_DOCS-}"
+ITERATE_DRY_RUN="${ITERATE_DRY_RUN-}"
+ITERATE_SKIP_GIT="${ITERATE_SKIP_GIT-}"
+ITERATE_SKIP_PR="${ITERATE_SKIP_PR-}"
+ITERATE_PAGES_ENABLE="${ITERATE_PAGES_ENABLE-}"
 
 # ---------- Helpers ----------
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -116,6 +118,36 @@ detect_docs_system() {
 	has_origin_remote() {
 		git remote get-url origin >/dev/null 2>&1
 	}
+
+repo_slug() {
+	local url
+	url=$(git remote get-url origin 2>/dev/null || true)
+	[[ -z "$url" ]] && return 1
+	case "$url" in
+		git@github.com:*)
+			echo "${url#git@github.com:}" | sed 's/\.git$//' ;;
+		https://github.com/*)
+			echo "${url#https://github.com/}" | sed 's/\.git$//' ;;
+		*)
+			return 1 ;;
+	esac
+}
+
+pages_enabled() {
+	have_cmd gh || return 1
+	has_origin_remote || return 1
+	local slug
+	slug=$(repo_slug) || return 1
+	gh api "repos/${slug}/pages" >/dev/null 2>&1
+}
+
+enable_pages() {
+	have_cmd gh || return 1
+	has_origin_remote || return 1
+	local slug
+	slug=$(repo_slug) || return 1
+	run_cmd gh api --method PUT "repos/${slug}/pages" -f build_type=workflow
+}
 
 git_has_changes() {
 	in_git_repo || return 1
@@ -241,11 +273,23 @@ step_docs() {
 		mkdocs)
 			if have_cmd "mkdocs"; then
 				run_cmd mkdocs build
+				# Suggest enabling GitHub Pages (Actions) for publishing
+				if have_cmd gh && has_origin_remote; then
+					if pages_enabled; then
+						echo "GitHub Pages is enabled for this repository."
+					else
+						echo "Hint: Enable GitHub Pages (Actions) to publish docs."
+						echo "  gh api --method PUT repos/$(repo_slug)/pages -f build_type=workflow"
+						if [[ "${ITERATE_PAGES_ENABLE}" == "true" ]]; then
+							enable_pages || warn "Failed to enable GitHub Pages via gh"
+						fi
+					fi
+				fi
 			else
 				if should_strict_docs; then
-					die "mkdocs not installed. Install with: pip install mkdocs or brew install mkdocs"
+					die "mkdocs not installed. Try: bootstrap/scripts/install-mkdocs.sh (preferred), or see https://www.mkdocs.org/user-guide/installation/"
 				else
-					warn "mkdocs not installed; skipping docs"
+					warn "mkdocs not installed; skipping docs. Run bootstrap/scripts/install-mkdocs.sh to install (pipx or pip --user)."
 				fi
 			fi
 			;;
@@ -348,6 +392,19 @@ step_pr() {
 
 # ---------- Main ----------
 load_config
+# Apply defaults only after env and .iterate.json
+[[ -z "${ITERATE_COMMIT_PREFIX}" ]] && ITERATE_COMMIT_PREFIX="chore:"
+[[ -z "${ITERATE_PR_TITLE_PREFIX}" ]] && ITERATE_PR_TITLE_PREFIX="chore:"
+[[ -z "${ITERATE_PR_DRAFT}" ]] && ITERATE_PR_DRAFT="true"
+[[ -z "${ITERATE_PR_BASE}" ]] && ITERATE_PR_BASE=""
+[[ -z "${ITERATE_PR_REVIEWERS}" ]] && ITERATE_PR_REVIEWERS=""
+[[ -z "${ITERATE_SKIP_DOCS}" ]] && ITERATE_SKIP_DOCS="false"
+[[ -z "${ITERATE_RUN_TESTS_IF_PRESENT}" ]] && ITERATE_RUN_TESTS_IF_PRESENT="true"
+[[ -z "${ITERATE_STRICT}" ]] && ITERATE_STRICT="false"
+[[ -z "${ITERATE_STRICT_DOCS}" ]] && ITERATE_STRICT_DOCS=""
+[[ -z "${ITERATE_DRY_RUN}" ]] && ITERATE_DRY_RUN="false"
+[[ -z "${ITERATE_SKIP_GIT}" ]] && ITERATE_SKIP_GIT="false"
+[[ -z "${ITERATE_SKIP_PR}" ]] && ITERATE_SKIP_PR="false"
 cmd="${1:-help}"
 case "$cmd" in
 	build) step_build;;
@@ -368,7 +425,7 @@ case "$cmd" in
 		;;
 	help|*)
 		cat <<EOF
-Usage: scripts/iterate.sh [build|test|docs|git|pr|iterate|doctor]
+Usage: bootstrap/scripts/iterate.sh [build|test|docs|git|pr|iterate|doctor]
 Environment:
 	ITERATE_COMMIT_PREFIX           default "chore:"
 	ITERATE_PR_TITLE_PREFIX         default "chore:"
@@ -382,6 +439,7 @@ Environment:
 	ITERATE_DRY_RUN                 "true" to print actions without running
 	ITERATE_SKIP_GIT               "true" to skip commit/push
 	ITERATE_SKIP_PR                "true" to skip PR creation/update
+	ITERATE_PAGES_ENABLE           "true" to auto-enable GitHub Pages (Actions) if possible
 
 Config file:
 	Optional .iterate.json (requires jq). Example keys:

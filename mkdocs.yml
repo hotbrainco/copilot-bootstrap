@@ -1,0 +1,21 @@
+site_name: Copilot Bootstrap
+site_url: https://example.com
+theme:
+  name: material
+plugins:
+  - search
+  # Optional plugins you can enable as needed:
+  # - awesome-pages
+  # - monorepo
+  # - include-markdown
+  # - mkdocs-jupyter
+  # - mermaid2
+nav:
+  - Home: index.md
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+
+# By default, MkDocs looks under ./docs for content.

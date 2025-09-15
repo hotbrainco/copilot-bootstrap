@@ -1,10 +1,10 @@
 # Iteration Workflow Starter
 
-##1. Copy `copilot-bootstrap.sh` into your new app folder.
+## 1. Copy `copilot-bootstrap.sh` into your new app folder.
 2. Run this in VS Code's terminal:
   ```bash
   bash copilot-bootstrap.sh
-  ```all (for your app repo)
+  ```
 
 Run this from the root of your app’s repository (new or existing). This copies only the needed files into your repo.
 
@@ -34,10 +34,10 @@ Your app’s README at repo root is not overwritten. Bootstrap docs live under `
 
 ### Usage
 
-1. Copy `kickstart_new_repo.sh` into your new app folder.
+1. Copy `copilot-bootstrap.sh` into your new app folder.
 2. Run this in VS Code’s terminal:
   ```bash
-  bash kickstart_new_repo.sh
+  bash copilot-bootstrap.sh
   ```
   This will:
   - Download the latest workflow files from this repo.
@@ -85,6 +85,30 @@ The script will automatically skip unavailable steps, and prints a preflight sum
 - `.github/copilot-instructions.md`: Always-on Copilot repo instructions.
 - `ROADMAP.md`: A simple roadmap that both humans and Copilot can use.
 
+## Optional: Docs Starter (MkDocs)
+
+This repo includes an optional MkDocs starter (`mkdocs.yml` + `docs/index.md`). If you want a documentation site:
+
+```bash
+chmod +x bootstrap/scripts/install-mkdocs.sh
+bash bootstrap/scripts/install-mkdocs.sh
+mkdocs serve
+```
+
+Or build via the iterate docs step:
+
+```bash
+bootstrap/scripts/iterate.sh docs
+```
+
+### Publish to GitHub Pages
+
+This repo includes a GitHub Actions workflow at `.github/workflows/docs-pages.yml` that builds MkDocs and deploys to GitHub Pages on pushes to `main`.
+
+One-time setup:
+- In your repo settings → Pages, set "Source" = GitHub Actions.
+- Push to `main` to trigger a build, or run the workflow manually.
+
 ## Behavior Overview
 
 - Detects package manager: pnpm → yarn → npm.
@@ -105,6 +129,13 @@ bootstrap/scripts/iterate.sh doctor
 The preflight runs automatically when you use `iterate`.
 
 You can also run it via VS Code task: `iterate:doctor`.
+
+If you plan to use MkDocs for docs, install it with:
+
+```bash
+chmod +x bootstrap/scripts/install-mkdocs.sh
+bash bootstrap/scripts/install-mkdocs.sh
+```
 
 ## VS Code Tasks
 
