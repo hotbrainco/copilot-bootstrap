@@ -51,6 +51,17 @@ if [[ -f ./.vscode/tasks.json ]]; then
 	fi
 fi
 
+
+# Prefer GitHub CLI for git credentials in this repo to avoid Keychain prompts
+if command -v gh >/dev/null 2>&1; then
+	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		# Configure at repo scope; do not modify global user config
+		git config --local --unset-all credential.helper 2>/dev/null || true
+		git config --local credential.helper '!gh auth git-credential' || true
+		echo "🔐 Configured git to use GitHub CLI credentials for this repo"
+	fi
+fi
+
 if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 	if command -v sed >/dev/null 2>&1; then
 		sed -i.bak 's#bash scripts/iterate.sh#bash bootstrap/scripts/iterate.sh#g' ./.github/workflows/iterate-smoke.yml || true
