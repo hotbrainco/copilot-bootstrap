@@ -7,6 +7,36 @@ set -euo pipefail
 REPO="hotbrainco/copilot-bootstrap"
 TAG="${BOOTSTRAP_TAG:-v0.1.5}"
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
+
+# Interactive helpers
+is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 0 && -t 1 ]]; }
+yesno() {
+	local prompt="$1" default="${2:-Y}" ans
+	if ! is_tty; then return 1; fi
+	local suffix=" [y/N]"
+	[[ "$default" == "Y" || "$default" == "y" ]] && suffix=" [Y/n]"
+	read -r -p "$prompt$suffix " ans || true
+	ans=${ans:-$default}
+	[[ "$ans" == "y" || "$ans" == "Y" ]]
+}
+
+# Pre-install summary and confirmation (TTY or BOOTSTRAP_INTERACTIVE)
+if is_tty; then
+	echo "Copilot Bootstrap will install:"
+	echo "  - bootstrap/scripts/* into ./bootstrap/"
+	echo "  - Optional bootstrap docs (README, COPILOT_BOOTSTRAP) into ./bootstrap/"
+	echo "  - .iterate.json and ROADMAP.md into repo root"
+	echo "  - .vscode/ and .github/ (only missing files; existing files preserved)"
+	echo "It may also:"
+	echo "  - Patch VS Code tasks and CI workflow references to new script path"
+	echo "  - Configure this repo to use GitHub CLI for git credentials (if gh + git repo)"
+	echo ""
+	if ! yesno "Proceed with installation?" Y; then
+		echo "Aborted. No changes made."
+		exit 0
+	fi
+fi
+
 TMPDIR="$(mktemp -d)"
 
 curl -fsSL "$ZIP_URL" -o "$TMPDIR/cb.zip"
@@ -72,14 +102,6 @@ if [[ -f ./.github/workflows/iterate-smoke.yml ]]; then
 fi
 
 	# --- Optional interactive docs setup ---
-	is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 0 && -t 1 ]]; }
-	yesno() {
-		local prompt="$1" default="${2:-N}" ans
-		if ! is_tty; then return 1; fi
-		read -r -p "$prompt [y/N] " ans || true
-		ans=${ans:-$default}
-		[[ "$ans" == "y" || "$ans" == "Y" ]]
-	}
 
 	maybe_copy_docs_starter() {
 		local copied="false"
