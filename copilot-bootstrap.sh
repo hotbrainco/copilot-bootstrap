@@ -159,7 +159,6 @@ fi
 	}
 
 	maybe_setup_git_and_origin
-
 	# --- Optional interactive docs setup ---
 
 	maybe_copy_docs_starter() {
