@@ -153,5 +153,29 @@
 				"clear": true
 			}
 		}
+		,
+		{
+			"label": "sandbox:doctor",
+			"type": "shell",
+			"command": "bootstrap/scripts/sandbox.sh",
+			"args": ["doctor", "--keep"],
+			"options": {
+				"shell": { "executable": "bash", "args": ["-lc"] }
+			},
+			"problemMatcher": [],
+			"presentation": { "reveal": "silent", "panel": "dedicated", "clear": true }
+		},
+		{
+			"label": "sandbox:iterate",
+			"type": "shell",
+			"command": "bootstrap/scripts/sandbox.sh",
+			"args": ["iterate", "--keep"],
+			"options": {
+				"shell": { "executable": "bash", "args": ["-lc"] },
+				"env": { "ITERATE_SKIP_GIT": "true", "ITERATE_SKIP_PR": "true" }
+			},
+			"problemMatcher": [],
+			"presentation": { "reveal": "silent", "panel": "dedicated", "clear": true }
+		}
 	]
 }

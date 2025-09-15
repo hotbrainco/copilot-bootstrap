@@ -138,12 +138,28 @@ Use the doctor to preview what will happen and what’s detected:
 bootstrap/scripts/iterate.sh doctor
 ```
 
+## Safe Sandbox Runs (no repo changes)
+
+To exercise the iterate workflow without touching this repository, use the sandbox runner. It copies the repo into a temporary directory and runs there.
+
+Quick commands:
+
+```bash
+# Doctor-only in sandbox (keeps temp folder for inspection)
+
 The preflight runs automatically when you use `iterate`.
 
 You can also run it via VS Code task: `iterate:doctor`.
 
 If you plan to use MkDocs for docs, install it with:
 
+```
+
+VS Code tasks:
+- `sandbox:doctor`: runs doctor in an isolated copy
+- `sandbox:iterate`: runs the full loop in an isolated copy with git/PR disabled
+
+Nothing in your working tree is modified by sandbox runs.
 ```bash
 chmod +x bootstrap/scripts/install-mkdocs.sh
 bash bootstrap/scripts/install-mkdocs.sh
