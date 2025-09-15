@@ -1,5 +1,26 @@
 # Iteration Workflow Starter
 
+## Install (for your app repo)
+
+Run this from the root of your app’s repository (new or existing). This copies only the needed files into your repo.
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.0/kickstart_new_repo.sh)"
+```
+
+No pipe-to-shell alternative:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.0/kickstart_new_repo.sh -o kickstart_new_repo.sh
+bash kickstart_new_repo.sh
+```
+
+What gets installed
+- Root: `.vscode/`, `.github/`, `.iterate.json`, `ROADMAP.md`
+- Subfolder: `bootstrap/` (contains `scripts/iterate.sh`, `README.md`, `COPILOT_BOOTSTRAP.md`)
+
+Your app’s README at repo root is not overwritten. Bootstrap docs live under `bootstrap/`.
+
 ## Setup Scripts
 
 
