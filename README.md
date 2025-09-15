@@ -1,26 +1,38 @@
 # Iteration Workflow Starter
 
-## 1. Copy `copilot-bootstrap.sh` into your new app folder.
-2. Run this in VS Code's terminal:
-  ```bash
-  bash copilot-bootstrap.sh
-  ```
-
-Run this from the root of your app’s repository (new or existing). This copies only the needed fi## Troubleshooting
-
-- Missing tools: enable strict mode to fail explicitly (`ITERATE_STRICT=true`), or install the required tool.
-- Unexpected git behavior: ensure you're on a branch and have `origin` configured.
-- PR step errors: verify you're authenticated with `gh auth login` and have push permissions.
-- Note: The `iterate` task automatically creates a feature branch when run from `main`/`master` to avoid conflicts.
-
-Latest release (auto):
+Quick Start (install into your project):
 
 ```bash
 TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh)"
 ```
 
-No pipe-to-shell alternative:
+What this does:
+- Copies `bootstrap/scripts/iterate.sh` and helpers into `./bootstrap/`
+- Adds `.iterate.json`, `ROADMAP.md`, `.vscode/`, `.github/` (preserving existing files)
+- Prints next-step commands to run the iteration loop
+- Prompts you to confirm before copying files
+- Guides you to set up git and a GitHub repo (init, connect existing URL, or create via `gh`) and only then offers to enable GitHub Pages
+
+Doctor (preflight):
+
+- What it is: a read-only check that detects your stack (package manager, docs, tests, git/gh) and prints what the iteration loop would do. It doesn’t change your repo.
+- Run it right after install:
+
+```bash
+bash bootstrap/scripts/iterate.sh doctor
+```
+
+Prefer a pinned version or no pipe-to-shell? See below.
+
+## Troubleshooting
+
+- Missing tools: enable strict mode to fail explicitly (`ITERATE_STRICT=true`), or install the required tool.
+- Unexpected git behavior: ensure you're on a branch and have `origin` configured.
+- PR step errors: verify you're authenticated with `gh auth login` and have push permissions.
+- Note: The `iterate` task automatically creates a feature branch when run from `main`/`master` to avoid conflicts.
+
+Latest release (auto) — no pipe-to-shell alternative:
 
 Pinned version (replace vX.Y.Z with a specific tag):
 
