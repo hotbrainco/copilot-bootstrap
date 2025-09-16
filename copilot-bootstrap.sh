@@ -199,30 +199,44 @@ fi
 			https://github.com/*) slug="${url#https://github.com/}"; slug="${slug%.git}" ;;
 			*) echo "Unrecognized origin; skipping Pages enable"; return 1 ;;
 		esac
-		# Respect repo visibility: only auto-enable for public repos unless forced
+		# Determine visibility for private-repo handling
 		local visibility
 		visibility=$(gh repo view --json visibility -q .visibility 2>/dev/null || echo "unknown")
-		if [[ "${BOOTSTRAP_PAGES_FORCE:-false}" != "true" && "$visibility" != "PUBLIC" ]]; then
-			echo "Repo visibility is '$visibility'; skipping Pages enable (set BOOTSTRAP_PAGES_FORCE=true to override)"
-			return 1
-		fi
 
-		# Try idempotent PUT first; if success, we're done
-		if gh api --method PUT "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
-			echo "✅ GitHub Pages enabled (Actions workflow)"
+		# Helper to interpret a failed API call and provide a friendly message
+		local _out _status
+		try_put_create() {
+			_out=$(gh api --method PUT "repos/${slug}/pages" -f build_type=workflow 2>&1); _status=$?
+			if [[ $_status -eq 0 ]]; then
+				echo "✅ GitHub Pages enabled (Actions workflow)"; return 0
+			fi
+			# Try create then configure
+			_out=$(gh api --method POST "repos/${slug}/pages" -f build_type=workflow 2>&1); _status=$?
+			if [[ $_status -eq 0 ]]; then
+				_out=$(gh api --method PUT "repos/${slug}/pages" -f build_type=workflow 2>&1); _status=$?
+				if [[ $_status -eq 0 ]]; then
+					echo "✅ GitHub Pages created and configured (Actions workflow)"; return 0
+				fi
+			fi
+			return 1
+		}
+
+		# If repo is private and not forced, attempt and detect plan limitation cleanly
+		if [[ "${BOOTSTRAP_PAGES_FORCE:-false}" != "true" && "$visibility" != "PUBLIC" ]]; then
+			if ! try_put_create; then
+				if echo "$_out" | grep -qi "does not support GitHub Pages"; then
+					echo "Private repo detected and current plan does not support Pages. Skipping enablement."
+				else
+					echo "Skipping Pages enable (private repo) — set BOOTSTRAP_PAGES_FORCE=true to attempt anyway."
+				fi
+				return 1
+			fi
 			return 0
 		fi
-		# If PUT failed, try POST (create) then PUT (configure)
-		if gh api --method POST "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
-			if gh api --method PUT "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
-				echo "✅ GitHub Pages created and configured (Actions workflow)"
-				return 0
-			else
-				echo "WARN: Pages site created but failed to configure workflow build type"
-			fi
-		else
-			echo "WARN: Failed to create or enable Pages (see: gh api repos/${slug}/pages)"
-		fi
+
+		# Public repos or forced: proceed
+		if try_put_create; then return 0; fi
+		echo "WARN: Failed to create or enable Pages (see: gh api repos/${slug}/pages)"
 		return 1
 	}
 
@@ -303,8 +317,15 @@ fi
 		fi
 		
 		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" N; then
-			bash bootstrap/scripts/iterate.sh doctor || true
-			ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
+			if [[ -d .venv ]]; then
+				source .venv/bin/activate
+				bash bootstrap/scripts/iterate.sh doctor || true
+				ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
+				deactivate || true
+			else
+				bash bootstrap/scripts/iterate.sh doctor || true
+				ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
+			fi
 		fi
 	fi
 # Create a placeholder README if one doesn't exist
