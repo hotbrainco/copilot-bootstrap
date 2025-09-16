@@ -1,0 +1,14 @@
+# OS/user specifics
+.DS_Store
+*.log
+
+# Python/venv for local docs builds
+.venv/
+
+# MkDocs build output
+site/
+
+# Common build outputs (future-proofing)
+node_modules/
+dist/
+build/
