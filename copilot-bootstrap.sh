@@ -16,6 +16,24 @@ if [[ -z "$TAG" ]]; then
 fi
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 
+# ----------------------------------------------------------------------
+# Default prompt choices (edit here or override via environment variables)
+# Set to Y or N for yes/no prompts; non-boolean prompts use sensible values.
+# You can override without editing by exporting BOOTSTRAP_DEFAULT_* vars, e.g.:
+#   BOOTSTRAP_DEFAULT_SETUP_DOCS=Y BOOTSTRAP_DEFAULT_REPO_VISIBILITY=public bash copilot-bootstrap.sh
+# ----------------------------------------------------------------------
+DEFAULT_PROCEED_INSTALL="${BOOTSTRAP_DEFAULT_PROCEED_INSTALL:-Y}"
+DEFAULT_INIT_GIT="${BOOTSTRAP_DEFAULT_INIT_GIT:-Y}"
+DEFAULT_CONNECT_GITHUB="${BOOTSTRAP_DEFAULT_CONNECT_GITHUB:-Y}"
+DEFAULT_PUSH_INITIAL="${BOOTSTRAP_DEFAULT_PUSH_INITIAL:-Y}"
+DEFAULT_SETUP_DOCS="${BOOTSTRAP_DEFAULT_SETUP_DOCS:-N}"
+DEFAULT_DOCS_CHOICE="${BOOTSTRAP_DEFAULT_DOCS_CHOICE:-1}"  # 1=MkDocs, 2=VitePress, 3=Docusaurus, 4=Simple
+DEFAULT_INSTALL_MKDOCS="${BOOTSTRAP_DEFAULT_INSTALL_MKDOCS:-Y}"
+DEFAULT_COMMIT_DOCS="${BOOTSTRAP_DEFAULT_COMMIT_DOCS:-Y}"
+DEFAULT_ENABLE_PAGES_INTERACTIVE="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE:-N}"
+DEFAULT_RUN_DOCS_NOW="${BOOTSTRAP_DEFAULT_RUN_DOCS_NOW:-N}"
+DEFAULT_REPO_VISIBILITY="${BOOTSTRAP_DEFAULT_REPO_VISIBILITY:-private}"
+
 # Interactive helpers
 is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
 yesno() {
@@ -45,7 +63,7 @@ if is_tty; then
 	echo "  - Patch VS Code tasks and CI workflow references to new script path"
 	echo "  - Configure this repo to use GitHub CLI for git credentials (if gh + git repo)"
 	echo ""
-	if ! yesno "Proceed with installation?" Y; then
+	if ! yesno "Proceed with installation?" "$DEFAULT_PROCEED_INSTALL"; then
 		echo "Aborted. No changes made."
 		exit 0
 	fi
@@ -128,7 +146,7 @@ fi
 	maybe_setup_git_and_origin() {
 		is_tty || return 0
 		if ! in_git_repo; then
-			if yesno "Initialize a git repository here?" Y; then
+			if yesno "Initialize a git repository here?" "$DEFAULT_INIT_GIT"; then
 				git init -b main 2>/dev/null || { git init || true; }
 				# Ensure default branch is main before first commit when possible
 				git symbolic-ref HEAD refs/heads/main 2>/dev/null || true
@@ -137,21 +155,21 @@ fi
 			fi
 		fi
 		if in_git_repo && ! has_origin_remote; then
-			if yesno "Connect this repo to GitHub now?" Y; then
+			if yesno "Connect this repo to GitHub now?" "$DEFAULT_CONNECT_GITHUB"; then
 				read -r -p "Enter existing GitHub repo URL (ssh/https), or leave blank to create via gh: " GH_URL < /dev/tty || true
 				# Validate that GH_URL looks like a git URL, not literal text like "leave blank"
 				if [[ -n "${GH_URL:-}" ]] && [[ "$GH_URL" =~ ^(git@|https?://) ]]; then
 					git remote add origin "$GH_URL" 2>/dev/null || git remote set-url origin "$GH_URL" || true
 					ensure_initial_commit
-					if yesno "Push to origin now?" Y; then
+					if yesno "Push to origin now?" "$DEFAULT_PUSH_INITIAL"; then
 						git push -u origin main || true
 					fi
 				elif command -v gh >/dev/null 2>&1; then
 					DEFAULT_NAME="${PWD##*/}"
 					read -r -p "New repo name [${DEFAULT_NAME}]: " NEW_NAME < /dev/tty || true
 					NEW_NAME=${NEW_NAME:-$DEFAULT_NAME}
-					read -r -p "Visibility (private/public) [private]: " VIS < /dev/tty || true
-					VIS=${VIS:-private}
+					read -r -p "Visibility (private/public) [${DEFAULT_REPO_VISIBILITY}]: " VIS < /dev/tty || true
+					VIS=${VIS:-$DEFAULT_REPO_VISIBILITY}
 					ensure_initial_commit
 					# Allow org/name input; gh uses current user if no owner provided
 					# Note: --confirm/-y is deprecated in newer gh; run interactively without it
@@ -240,7 +258,7 @@ fi
 		return 1
 	}
 
-	if yesno "Set up documentation now?" N; then
+	if yesno "Set up documentation now?" "$DEFAULT_SETUP_DOCS"; then
 		echo ""
 		echo "📚 Documentation options:"
 		echo "  1. MkDocs (Python) - Material theme, great for technical docs"
@@ -248,15 +266,15 @@ fi
 		echo "  3. Docusaurus (Node.js) - React-based, feature-rich"
 		echo "  4. Simple Markdown - No dependencies, works with GitHub Pages"
 		echo ""
-		read -r -p "Choose option (1-4) [1]: " docs_choice
-		docs_choice=${docs_choice:-1}
+	read -r -p "Choose option (1-4) [${DEFAULT_DOCS_CHOICE}]: " docs_choice
+	docs_choice=${docs_choice:-$DEFAULT_DOCS_CHOICE}
 		
 		case "$docs_choice" in
 			1)
 				echo "🐍 Setting up MkDocs..."
 				maybe_copy_docs_starter
 				chmod +x ./bootstrap/scripts/install-mkdocs.sh || true
-				if yesno "Install MkDocs in .venv now?" Y; then
+				if yesno "Install MkDocs in .venv now?" "$DEFAULT_INSTALL_MKDOCS"; then
 					bash ./bootstrap/scripts/install-mkdocs.sh || true
 				fi
 				;;
@@ -284,7 +302,7 @@ fi
 		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 			# Detect uncommitted changes (added/modified/untracked)
 			if [[ -n "$(git status --porcelain)" ]]; then
-				if yesno "Commit new documentation files now?" Y; then
+				if yesno "Commit new documentation files now?" "$DEFAULT_COMMIT_DOCS"; then
 					git add -A || true
 					git commit -m "docs: add initial documentation files" || true
 					if git remote get-url origin >/dev/null 2>&1; then
@@ -310,13 +328,13 @@ fi
 				fi
 			else
 				# Offer interactive enable if a different docs system added a Pages workflow later
-				if is_tty && yesno "Enable GitHub Pages to publish docs (uses Actions)?" N; then
+				if is_tty && yesno "Enable GitHub Pages to publish docs (uses Actions)?" "$DEFAULT_ENABLE_PAGES_INTERACTIVE"; then
 					enable_pages_via_gh || true
 				fi
 			fi
 		fi
 		
-		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" N; then
+		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" "$DEFAULT_RUN_DOCS_NOW"; then
 			if [[ -d .venv ]]; then
 				source .venv/bin/activate
 				bash bootstrap/scripts/iterate.sh doctor || true
