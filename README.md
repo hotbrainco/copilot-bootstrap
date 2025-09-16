@@ -37,7 +37,7 @@ Latest release (auto) — no pipe-to-shell alternative:
 Pinned version (replace vX.Y.Z with a specific tag):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/vX.Y.Z/copilot-bootstrap.sh -o copilot-bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.14/copilot-bootstrap.sh -o copilot-bootstrap.sh
 bash copilot-bootstrap.sh
 ```
 
@@ -201,7 +201,7 @@ To update the bootstrap workflow in an existing project to the latest release (o
 ```bash
 bash bootstrap/scripts/update.sh
 # or pin a version
-BOOTSTRAP_TAG=v0.1.10 bash bootstrap/scripts/update.sh
+BOOTSTRAP_TAG=v0.1.14 bash bootstrap/scripts/update.sh
 ```
 This updates `bootstrap/scripts/*` (with a local backup) and adds any missing files under `.github/` and `.vscode/` without overwriting your changes.
 ## Behavior Overview
@@ -264,6 +264,31 @@ Run any task via the Command Palette → "Tasks: Run Task".
 ## Configuration
 
 The script supports environment variables and an optional `.iterate.json` file (requires `jq`) to tune behavior.
+Default prompt choices can also be controlled via dedicated environment variables without editing the script:
+
+- `BOOTSTRAP_DEFAULT_PROCEED_INSTALL`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_INIT_GIT`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_CONNECT_GITHUB`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_PUSH_INITIAL`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_SETUP_DOCS`: Y|N (default N)
+- `BOOTSTRAP_DEFAULT_DOCS_CHOICE`: 1|2|3|4 (default 1)
+- `BOOTSTRAP_DEFAULT_INSTALL_MKDOCS`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_COMMIT_DOCS`: Y|N (default Y)
+- `BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE`: Y|N (default N)
+- `BOOTSTRAP_DEFAULT_RUN_DOCS_NOW`: Y|N (default N)
+- `BOOTSTRAP_DEFAULT_REPO_VISIBILITY`: public|private (default private)
+
+Example overrides:
+
+```bash
+BOOTSTRAP_DEFAULT_SETUP_DOCS=Y \
+BOOTSTRAP_DEFAULT_DOCS_CHOICE=1 \
+BOOTSTRAP_DEFAULT_INSTALL_MKDOCS=Y \
+BOOTSTRAP_DEFAULT_COMMIT_DOCS=Y \
+BOOTSTRAP_DEFAULT_RUN_DOCS_NOW=Y \
+BOOTSTRAP_DEFAULT_REPO_VISIBILITY=public \
+bash copilot-bootstrap.sh
+```
 
 Environment variables:
 
