@@ -248,6 +248,20 @@ fi
 				;;
 		esac
 		
+		# Commit any newly created documentation files before enabling Pages
+		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+			# Detect uncommitted changes (added/modified/untracked)
+			if [[ -n "$(git status --porcelain)" ]]; then
+				if yesno "Commit new documentation files now?" Y; then
+					git add -A || true
+					git commit -m "docs: add initial documentation files" || true
+					if git remote get-url origin >/dev/null 2>&1; then
+						git push -u origin "$(git rev-parse --abbrev-ref HEAD)" || true
+					fi
+				fi
+			fi
+		fi
+
 		# Offer Pages enablement only when gh + origin are present
 		if command -v gh >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; then
 			if yesno "Enable GitHub Pages to publish docs (uses Actions)?" N; then
