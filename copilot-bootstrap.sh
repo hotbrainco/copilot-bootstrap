@@ -154,7 +154,8 @@ fi
 					VIS=${VIS:-private}
 					ensure_initial_commit
 					# Allow org/name input; gh uses current user if no owner provided
-					gh repo create "$NEW_NAME" --source=. --push --"$VIS" -y || true
+					# Note: --confirm/-y is deprecated in newer gh; run interactively without it
+					gh repo create "$NEW_NAME" --source=. --push --"$VIS" || true
 				else
 					echo "gh CLI not found. You can create a repo later and run: git remote add origin <url>; git push -u origin main"
 				fi
@@ -198,6 +199,14 @@ fi
 			https://github.com/*) slug="${url#https://github.com/}"; slug="${slug%.git}" ;;
 			*) echo "Unrecognized origin; skipping Pages enable"; return 1 ;;
 		esac
+		# Respect repo visibility: only auto-enable for public repos unless forced
+		local visibility
+		visibility=$(gh repo view --json visibility -q .visibility 2>/dev/null || echo "unknown")
+		if [[ "${BOOTSTRAP_PAGES_FORCE:-false}" != "true" && "$visibility" != "PUBLIC" ]]; then
+			echo "Repo visibility is '$visibility'; skipping Pages enable (set BOOTSTRAP_PAGES_FORCE=true to override)"
+			return 1
+		fi
+
 		# Try idempotent PUT first; if success, we're done
 		if gh api --method PUT "repos/${slug}/pages" -f build_type=workflow >/dev/null 2>&1; then
 			echo "✅ GitHub Pages enabled (Actions workflow)"
