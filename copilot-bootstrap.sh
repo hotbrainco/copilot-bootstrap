@@ -5,7 +5,15 @@
 set -euo pipefail
 
 REPO="hotbrainco/copilot-bootstrap"
-TAG="${BOOTSTRAP_TAG:-v0.1.10}"
+TAG="${BOOTSTRAP_TAG:-}"
+if [[ -z "$TAG" ]]; then
+	# Resolve latest release tag dynamically to avoid stale defaults
+	TAG="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | awk -F '"' '/tag_name/ {print $4; exit}')"
+fi
+if [[ -z "$TAG" ]]; then
+	echo "ERROR: Failed to determine release tag. Set BOOTSTRAP_TAG to a version like v0.1.13." >&2
+	exit 1
+fi
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 
 # Interactive helpers
@@ -262,10 +270,25 @@ fi
 			fi
 		fi
 
-		# Offer Pages enablement only when gh + origin are present
+
+		# Auto-enable Pages when a Pages workflow is present, unless skipped
 		if command -v gh >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; then
-			if yesno "Enable GitHub Pages to publish docs (uses Actions)?" N; then
-				enable_pages_via_gh || true
+			if [[ -f .github/workflows/docs-pages.yml ]] || grep -R "deploy-pages@" -n .github/workflows >/dev/null 2>&1; then
+				if [[ "${BOOTSTRAP_PAGES_SKIP:-}" == "true" ]]; then
+					echo "Skipping Pages enable (BOOTSTRAP_PAGES_SKIP=true)"
+				else
+					if [[ "${BOOTSTRAP_PAGES_ENABLE:-}" == "false" ]]; then
+						echo "Pages auto-enable disabled (BOOTSTRAP_PAGES_ENABLE=false)"
+					else
+						echo "🔄 Enabling GitHub Pages for this repo (Actions build)"
+						enable_pages_via_gh || true
+					fi
+				fi
+			else
+				# Offer interactive enable if a different docs system added a Pages workflow later
+				if is_tty && yesno "Enable GitHub Pages to publish docs (uses Actions)?" N; then
+					enable_pages_via_gh || true
+				fi
 			fi
 		fi
 		

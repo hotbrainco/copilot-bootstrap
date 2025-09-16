@@ -171,36 +171,28 @@ bootstrap/scripts/iterate.sh docs
 
 ### Publish to GitHub Pages
 
-This repo includes a GitHub Actions workflow at `.github/workflows/docs-pages.yml` that builds MkDocs and deploys to GitHub Pages on pushes to `main`.
+This repo includes a GitHub Actions workflow at `.github/workflows/docs-pages.yml` that builds MkDocs and deploys to GitHub Pages on pushes to `main`. The workflow uses `actions/configure-pages` + `actions/upload-pages-artifact` + `actions/deploy-pages`.
 
 One-time setup:
-- In your repo settings → Pages, set "Source" = GitHub Actions.
-- Push to `main` to trigger a build, or run the workflow manually.
+- The bootstrap script automatically enables GitHub Pages for workflow builds when `gh` and an `origin` remote are available. Set `BOOTSTRAP_PAGES_SKIP=true` to opt out.
+- If you’re using the iterate docs step later, it can also enable Pages automatically.
 
-Tip: To auto-enable GitHub Pages via the docs step (when `gh` and `origin` are available), set:
-
-```bash
-ITERATE_PAGES_ENABLE=true bootstrap/scripts/iterate.sh docs
-```
-
-First-time GitHub Pages enablement:
-- A brand-new repository without an existing Pages site can return a 404 on the initial `PUT repos/<slug>/pages` call.
-- The bootstrap script now retries by creating (POST) then configuring (PUT) the site automatically.
-- If you need to do it manually (older version), run either:
-  - With `gh`:
-    ```bash
-    gh api --method POST "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pages" -f build_type=workflow
-    gh api --method PUT  "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/pages" -f build_type=workflow
-    ```
-  - With `curl` (needs `GITHUB_TOKEN` with `repo` scope):
-    ```bash
-    REPO_SLUG="owner/repo"  # e.g. myorg/myrepo
-    API="https://api.github.com/repos/${REPO_SLUG}/pages"
-    curl -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-      -d '{"build_type":"workflow"}' "$API"
-    curl -X PUT  -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
-      -d '{"build_type":"workflow"}' "$API"
-    ```
+Manual fallback (if needed):
+- With `gh`:
+  ```bash
+  REPO_SLUG="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
+  gh api --method POST "repos/${REPO_SLUG}/pages" -f build_type=workflow || true
+  gh api --method PUT  "repos/${REPO_SLUG}/pages" -f build_type=workflow
+  ```
+- With `curl` (needs `GITHUB_TOKEN` with `repo` scope):
+  ```bash
+  REPO_SLUG="owner/repo"  # e.g. myorg/myrepo
+  API="https://api.github.com/repos/${REPO_SLUG}/pages"
+  curl -fsS -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+    -d '{"build_type":"workflow"}' "$API" || true
+  curl -fsS -X PUT  -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+    -d '{"build_type":"workflow"}' "$API"
+  ```
 
 ## Upgrade
 
