@@ -139,7 +139,8 @@ fi
 		if in_git_repo && ! has_origin_remote; then
 			if yesno "Connect this repo to GitHub now?" Y; then
 				read -r -p "Enter existing GitHub repo URL (ssh/https), or leave blank to create via gh: " GH_URL < /dev/tty || true
-				if [[ -n "${GH_URL:-}" ]]; then
+				# Validate that GH_URL looks like a git URL, not literal text like "leave blank"
+				if [[ -n "${GH_URL:-}" ]] && [[ "$GH_URL" =~ ^(git@|https?://) ]]; then
 					git remote add origin "$GH_URL" 2>/dev/null || git remote set-url origin "$GH_URL" || true
 					ensure_initial_commit
 					if yesno "Push to origin now?" Y; then

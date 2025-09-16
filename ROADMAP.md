@@ -1,30 +1,52 @@
 # Roadmap
 
-This file is the source of truth for what to build next. Copilot and humans should both use it.
+Source of truth for what to build next. Keep items small with concrete acceptance criteria.
 
 How to use
-- Humans: Edit items below. Keep acceptance criteria concise and concrete.
-- Copilot: Pick the top item under “Now” (or the first in “Next” if “Now” is empty). Work in small, end-to-end increments and update this file with status and PR links.
+- Humans: Edit items below; keep acceptance criteria concise and testable.
+- Copilot: Always pick the first item under “Now”, complete it end‑to‑end, then update status/links.
 
 Status buckets
-- Now: Highest priority. Take one small slice at a time.
+- Now: Highest priority. One small slice at a time.
 - Next: Upcoming work, not yet started.
 - Later: Nice-to-have or blocked items.
 - Done: Completed items with links to PRs.
 
 ## Now
-// (empty — pick from Next)
+- [ ] Choose docs approach for `bootstrap-this/` (simple | mkdocs | vitepress | docusaurus) and make `docs` step green
+  - Acceptance:
+    - [ ] `bootstrap/scripts/iterate.sh docs` succeeds locally
+    - [ ] Minimal landing doc in `bootstrap-this/docs/`
 
 ## Next
-- [ ] Example: Improve error handling in engine-runner
+- [ ] Add a `.code-workspace` file that includes both roots
   - Acceptance:
-    - [ ] Return structured error codes
-    - [ ] Add integration test covering parity:local failure path
+    - [ ] Workspace lists `copilot-bootstrap/` and `bootstrap-this/` as folders
+    - [ ] Default build task runs `iterate` in each as appropriate
+- [ ] Enable GitHub Pages for `bootstrap-this/` once remote exists
+  - Acceptance:
+    - [ ] Pages build type set to workflow (via `gh` or API)
+    - [ ] Docs deploy from Actions on push to `main`
 
 ## Later
-- [ ] Example: Migrate docs to Docusaurus v3
+- [ ] Enable GitHub Pages for `bootstrap-this/` once remote exists
+  - Acceptance:
+    - [ ] Pages build type set to workflow (via `gh` or API)
+    - [ ] Docs deploy from Actions on push to `main`
 
 ## Done
+- [x] Bootstrap sibling repo: `../bootstrap-this/` — Completed
+  - Acceptance:
+    - [x] Folder `../bootstrap-this/` exists alongside `copilot-bootstrap/` in the parent.
+    - [x] Installer run via curl copies workflow files into `../bootstrap-this/`:
+      - [x] `bootstrap/scripts/iterate.sh` present and executable
+      - [x] `.vscode/` and `.github/` copied to repo root
+      - [x] `.iterate.json` and `ROADMAP.md` present
+    - [x] `bash bootstrap/scripts/iterate.sh doctor` runs and reports the environment (soft‑skips missing tools).
+    - [x] `bash bootstrap/scripts/iterate.sh iterate` completes locally (OK to skip git/PR if not configured).
+    - [x] Optional: repo initialized with git and first commit created; remote configured later or via `gh`.
+    - [x] Optional: open as a multi‑root workspace including both `copilot-bootstrap/` and `bootstrap-this/`.
+  - Notes: Fixed installer bug where literal "leave blank" was set as origin remote instead of validating URL format.
 - [x] Harden iteration loop and automation — PR: https://github.com/hotbrainco/copilot-bootstrap/pull/6
   - Acceptance:
     - Docs step soft-skips when MkDocs isn’t installed
