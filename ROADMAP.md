@@ -13,28 +13,44 @@ Status buckets
 - Done: Completed items with links to PRs.
 
 ## Now
-- [ ] Choose docs approach for `bootstrap-this/` (simple | mkdocs | vitepress | docusaurus) and make `docs` step green
+- [ ] Add changelog compare links automation
   - Acceptance:
-    - [ ] `bootstrap/scripts/iterate.sh docs` succeeds locally
-    - [ ] Minimal landing doc in `bootstrap-this/docs/`
+    - [ ] Each new inserted version section includes a GitHub compare link
+    - [ ] Script/workflow handles first-release edge case without link
+- [ ] Minimal test harness for installer script
+  - Acceptance:
+    - [ ] CI job runs installer in a temp directory
+    - [ ] Verifies non-interactive mode produces expected files & git init
+    - [ ] Fails if legacy prompt text reappears
 
 ## Next
 - [ ] Add a `.code-workspace` file that includes both roots
   - Acceptance:
     - [ ] Workspace lists `copilot-bootstrap/` and `bootstrap-this/` as folders
-    - [ ] Default build task runs `iterate` in each as appropriate
-- [ ] Enable GitHub Pages for `bootstrap-this/` once remote exists
+    - [ ] Default build task runs iteration doctor in each repo
+- [ ] CI docs build path (optional mkdocs install) smoke
   - Acceptance:
-    - [ ] Pages build type set to workflow (via `gh` or API)
-    - [ ] Docs deploy from Actions on push to `main`
+    - [ ] Job installs mkdocs via provided script
+    - [ ] `iterate.sh docs` exits 0
+- [ ] Spinner / timeout heuristics revisit
+  - Acceptance:
+    - [ ] Document recommended env overrides for slow orgs
+    - [ ] Add adaptive backoff if Pages API returns 202 repeatedly
 
 ## Later
-- [ ] Enable GitHub Pages for `bootstrap-this/` once remote exists
+- [ ] Optional: Release notes templating (markdown section ordering)
   - Acceptance:
-    - [ ] Pages build type set to workflow (via `gh` or API)
-    - [ ] Docs deploy from Actions on push to `main`
+    - [ ] Script can reorder sections (Added, Fixed, Changed) if present
+- [ ] Optional: Detect and warn on missing `GITHUB_TOKEN` before Pages enable attempt
+  - Acceptance:
+    - [ ] Clear pre-flight message instead of silent skip
 
 ## Done
+- [x] Choose docs approach (mkdocs optional, simple markdown baseline) — Completed
+  - Acceptance:
+    - [x] `bootstrap/scripts/iterate.sh docs` soft-skips cleanly without mkdocs
+    - [x] Baseline `docs/index.md` present after install
+  - Notes: Selected "simple" markdown default; mkdocs path documented via install script.
 - [x] Bootstrap sibling repo: `../bootstrap-this/` — Completed
   - Acceptance:
     - [x] Folder `../bootstrap-this/` exists alongside `copilot-bootstrap/` in the parent.
