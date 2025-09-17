@@ -1,4 +1,9 @@
 # Changelog
+## [v0.2.2] - 2025-09-17
+[Compare with v0.2.1](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.2.1...v0.2.2)
+
+Demo body line
+
 ## [v0.2.1] - 2025-09-17
 Manual dispatch retry body for v0.2.1
 
