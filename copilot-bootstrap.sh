@@ -261,6 +261,23 @@ fi
 	}
 
 	# Verify Pages deployment and availability
+	spinner_init() {
+		# Usage: spinner_init "Label"
+		SPINNER_FRAMES=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+		SPINNER_INDEX=0
+		SPINNER_LABEL="$1"
+	}
+	spinner_step() {
+		# Only animate on a TTY to avoid noisy CI logs
+		[[ -t 1 ]] || return 0
+		local f=${SPINNER_FRAMES[$SPINNER_INDEX]}
+		printf "\r%s %s" "$f" "$SPINNER_LABEL"
+		SPINNER_INDEX=$(((SPINNER_INDEX+1) % ${#SPINNER_FRAMES[@]}))
+	}
+	spinner_end() {
+		[[ -t 1 ]] || return 0
+		printf "\r    \r"
+	}
 	pages_slug_from_origin() {
 		git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
 		git remote get-url origin >/dev/null 2>&1 || return 1
@@ -299,18 +316,23 @@ fi
 		command -v gh >/dev/null 2>&1 || return 1
 		local slug status tries=0 max_tries=80
 		slug=$(pages_slug_from_origin) || return 1
+		spinner_init "Waiting for Pages build…"
 		while (( tries < max_tries )); do
 			status=$(gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages/builds/latest" -q .status 2>/dev/null || echo "unknown")
 			if [[ "$status" == "built" ]]; then
+				spinner_end
 				return 0
 			fi
 			if [[ "$status" == "errored" ]]; then
+				spinner_end
 				echo "Pages build errored (check Actions logs)."
 				return 1
 			fi
+			spinner_step
 			sleep 3
 			tries=$((tries+1))
 		done
+		spinner_end
 		echo "Timed out waiting for Pages build to complete."
 		return 1
 	}
@@ -318,17 +340,21 @@ fi
 	verify_pages_reachable() {
 		local url status tries=0 max_tries=60
 		url=$(resolve_pages_url) || return 1
+		spinner_init "Probing Pages URL…"
 		while (( tries < max_tries )); do
 			status=$(curl -sSIf "$url" -o /dev/null -w "%{http_code}" || echo "000")
 			case "$status" in
 				200|301|302)
+					spinner_end
 					echo "✅ GitHub Pages is live at: $url"
 					return 0
 					;;
 			esac
+			spinner_step
 			sleep 2
 			tries=$((tries+1))
 		done
+		spinner_end
 		echo "WARN: Could not confirm Pages is live yet. Try again soon: $url"
 		return 1
 	}
@@ -373,16 +399,18 @@ fi
 				;;
 		esac
 		
-		# Commit any newly created documentation files before enabling Pages
+		# Auto-commit any newly created documentation files (controlled by DEFAULT_COMMIT_DOCS)
 		if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-			# Detect uncommitted changes (added/modified/untracked)
 			if [[ -n "$(git status --porcelain)" ]]; then
-				if yesno "Commit new documentation files now?" "$DEFAULT_COMMIT_DOCS"; then
+				if [[ "$DEFAULT_COMMIT_DOCS" == "Y" || "$DEFAULT_COMMIT_DOCS" == "y" ]]; then
+					echo "💾 Committing documentation files"
 					git add -A || true
 					git commit -m "docs: add initial documentation files" || true
 					if git remote get-url origin >/dev/null 2>&1; then
 						git push -u origin "$(git rev-parse --abbrev-ref HEAD)" || true
 					fi
+				else
+					echo "Skipping docs commit (DEFAULT_COMMIT_DOCS not enabled)"
 				fi
 			fi
 		fi

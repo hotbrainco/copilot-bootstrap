@@ -182,6 +182,7 @@ Optional verification:
 - After enabling Pages (either during install or via iterate), the installer can verify that Pages is live by:
   - Polling the latest Pages build status via GitHub API, then
   - Probing the site URL until it returns HTTP 200/301/302.
+  - A small spinner animation is shown while waiting (TTY only).
 - Control this prompt via `BOOTSTRAP_DEFAULT_VERIFY_PAGES=Y|N` (default Y when interactive).
 
 Manual fallback (if needed):
@@ -281,6 +282,13 @@ Default prompt choices can also be controlled via dedicated environment variable
 - `BOOTSTRAP_DEFAULT_DOCS_CHOICE`: 1|2|3|4 (default 1)
 - `BOOTSTRAP_DEFAULT_INSTALL_MKDOCS`: Y|N (default Y)
 - `BOOTSTRAP_DEFAULT_COMMIT_DOCS`: Y|N (default Y)
+Behavior notes:
+- Docs commit: when docs are created/updated during install, the script auto-commits and pushes them if `DEFAULT_COMMIT_DOCS=Y` (default). Set `BOOTSTRAP_DEFAULT_COMMIT_DOCS=N` to skip auto-commit.
+- Pages verification: shows an animated spinner while waiting for the Pages build status and URL reachability check.
+
+FAQ:
+- "Run doctor and build docs now?": runs a quick preflight (doctor) to detect tools and settings, then builds the docs locally (e.g., `mkdocs build`). It doesn’t publish anything; it just validates your docs setup and generates the local `site/` folder.
+- "🔎 Verifying GitHub Pages deployment and availability": after enabling Pages, the script checks that GitHub’s Pages build has completed and that your public site URL is reachable (HTTP 200/301/302). This confirms your docs are actually live on Pages.
 - `BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_RUN_DOCS_NOW`: Y|N (default N)
