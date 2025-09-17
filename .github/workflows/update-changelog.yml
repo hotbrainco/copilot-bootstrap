@@ -52,10 +52,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           if git diff --quiet CHANGELOG.md; then
             echo "No changes to commit."
-          else
-            TAG="${{ steps.meta.outputs.tag }}"
-            git add CHANGELOG.md
-            git commit -m "chore: changelog: $TAG"
-            git push
+            exit 0
+          fi
+          TAG="${{ steps.meta.outputs.tag }}"
+          git add CHANGELOG.md
+          git commit -m "chore: changelog: $TAG"
+          git push
