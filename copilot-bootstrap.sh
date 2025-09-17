@@ -35,6 +35,8 @@ DEFAULT_RUN_DOCS_NOW="${BOOTSTRAP_DEFAULT_RUN_DOCS_NOW:-N}"
 DEFAULT_REPO_VISIBILITY="${BOOTSTRAP_DEFAULT_REPO_VISIBILITY:-private}"
 DEFAULT_VERIFY_PAGES="${BOOTSTRAP_DEFAULT_VERIFY_PAGES:-Y}"
 DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
+DEFAULT_RUN_DOCTOR_ON_INSTALL="${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:-Y}"
+DEFAULT_BUILD_DOCS_ON_INSTALL="${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:-Y}"
 
 # Interactive helpers
 is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
@@ -443,14 +445,17 @@ fi
 			fi
 		fi
 		
-		if [[ "$docs_choice" == "1" ]] && yesno "Run doctor and build docs now?" "$DEFAULT_RUN_DOCS_NOW"; then
-			if [[ -d .venv ]]; then
+		# Automatically run doctor and build docs (no prompt), controllable via env defaults
+		if [[ "$DEFAULT_RUN_DOCTOR_ON_INSTALL" =~ ^[Yy]$ ]]; then
+			bash bootstrap/scripts/iterate.sh doctor || true
+		fi
+
+		if [[ "$DEFAULT_BUILD_DOCS_ON_INSTALL" =~ ^[Yy]$ ]]; then
+			if [[ -d .venv && "$docs_choice" == "1" ]]; then
 				source .venv/bin/activate
-				bash bootstrap/scripts/iterate.sh doctor || true
 				ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
 				deactivate || true
 			else
-				bash bootstrap/scripts/iterate.sh doctor || true
 				ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
 			fi
 		fi
