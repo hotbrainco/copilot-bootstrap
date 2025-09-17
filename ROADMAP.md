@@ -13,10 +13,6 @@ Status buckets
 - Done: Completed items with links to PRs.
 
 ## Now
-- [ ] Add changelog compare links automation
-  - Acceptance:
-    - [ ] Each new inserted version section includes a GitHub compare link
-    - [ ] Script/workflow handles first-release edge case without link
 - [ ] Minimal test harness for installer script
   - Acceptance:
     - [ ] CI job runs installer in a temp directory
@@ -46,6 +42,11 @@ Status buckets
     - [ ] Clear pre-flight message instead of silent skip
 
 ## Done
+- [x] Add changelog compare links automation — Completed
+  - Acceptance:
+    - [x] Each new inserted version section includes a GitHub compare link
+    - [x] Script/workflow handles first-release edge case without link
+  - Notes: Implemented in `scripts/append-changelog.sh`; workflow reuse automatically picks it up.
 - [x] Choose docs approach (mkdocs optional, simple markdown baseline) — Completed
   - Acceptance:
     - [x] `bootstrap/scripts/iterate.sh docs` soft-skips cleanly without mkdocs

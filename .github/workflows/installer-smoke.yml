@@ -1,0 +1,23 @@
+name: Installer Smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo (for script versions)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run smoke installer test (latest release)
+        run: |
+          bash scripts/smoke-installer.sh
