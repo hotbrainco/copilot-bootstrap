@@ -3,6 +3,14 @@ name: Update Changelog
 on:
   release:
     types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag version (e.g. v0.2.1)"
+        required: true
+      body:
+        description: "Release notes body (optional)"
+        required: false
 
 permissions:
   contents: write
@@ -19,23 +27,33 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Fetch release notes
-        id: notes
-        run: |
-          gh release view "$GITHUB_REF_NAME" --json body -q '.body' > release-notes.md
+      - name: Determine tag and notes
+        id: meta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ inputs.tag }}"
+            printf '%s' "${{ inputs.body }}" > release-notes.md
+          else
+            TAG="$GITHUB_REF_NAME"
+            gh release view "$TAG" --json body -q '.body' > release-notes.md
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Append to CHANGELOG
         run: |
           chmod +x scripts/append-changelog.sh
-          ./scripts/append-changelog.sh "$GITHUB_REF_NAME" release-notes.md || echo "No changelog update needed."
+          TAG="${{ steps.meta.outputs.tag }}"
+          chmod +x scripts/append-changelog.sh
+          ./scripts/append-changelog.sh "$TAG" release-notes.md || echo "No changelog update needed."
       - name: Commit changes
         run: |
           if git diff --quiet CHANGELOG.md; then
             echo "No changes to commit."
           else
             git add CHANGELOG.md
-            git commit -m "chore: changelog: $GITHUB_REF_NAME"
+            TAG="${{ steps.meta.outputs.tag }}"
+            git commit -m "chore: changelog: $TAG"
             git push
           fi
         env:
