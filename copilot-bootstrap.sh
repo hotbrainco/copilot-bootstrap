@@ -281,7 +281,11 @@ fi
 		[[ -t 1 ]] || return 0
 		local f=${SPINNER_FRAMES[$SPINNER_INDEX]}
 		printf "\r%s %s" "$f" "$SPINNER_LABEL"
+		# Small delay to increase perceived speed; overridable via BOOTSTRAP_SPINNER_DELAY_SECONDS
+		local delay="${BOOTSTRAP_SPINNER_DELAY_SECONDS:-0.05}"
 		SPINNER_INDEX=$(((SPINNER_INDEX+1) % ${#SPINNER_FRAMES[@]}))
+		# Use sleep only if delay > 0
+		awk -v d="$delay" 'BEGIN { if (d+0 > 0) { system("sleep " d) } }' >/dev/null 2>&1 || true
 	}
 	spinner_end() {
 		[[ -t 1 ]] || return 0
@@ -333,7 +337,7 @@ fi
 		[[ "$total" -gt 0 ]] || total=240
 		max_tries=$(( total / interval ))
 		(( max_tries > 0 )) || max_tries=80
-		spinner_init "Waiting for Pages build…"
+		spinner_init "Waiting for Pages build (1–2 min)…"
 		while (( tries < max_tries )); do
 			status=$(gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages/builds/latest" -q .status 2>/dev/null || echo "unknown")
 			if [[ "$status" == "built" ]]; then
@@ -364,7 +368,7 @@ fi
 		[[ "$total" -gt 0 ]] || total=120
 		max_tries=$(( total / interval ))
 		(( max_tries > 0 )) || max_tries=60
-		spinner_init "Probing Pages URL…"
+		spinner_init "Probing Pages URL (a few seconds)…"
 		while (( tries < max_tries )); do
 			status=$(curl -sSIf "$url" -o /dev/null -w "%{http_code}" || echo "000")
 			case "$status" in
