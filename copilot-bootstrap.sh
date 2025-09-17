@@ -162,14 +162,14 @@ fi
 		fi
 	}
 	maybe_setup_git_and_origin() {
-		is_tty || return 0
+		# In non-interactive mode we still perform git/origin setup using defaults
 		if ! in_git_repo; then
 			if yesno "Initialize a git repository here?" "$DEFAULT_INIT_GIT"; then
 				git init -b main 2>/dev/null || { git init || true; }
 				# Ensure default branch is main before first commit when possible
 				git symbolic-ref HEAD refs/heads/main 2>/dev/null || true
 				ensure_initial_commit
-				echo "✅ Initialized git repo (main) and created initial commit"
+				is_tty && echo "✅ Initialized git repo (main) and created initial commit" || true
 			fi
 		fi
 			if in_git_repo && ! has_origin_remote; then
