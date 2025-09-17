@@ -425,3 +425,7 @@ chmod +x bootstrap/scripts/iterate.sh
 - Use `ROADMAP.md` as the source of truth.
 - Keep changes small; update tests and docs alongside code.
 - After successful iterations, the script commits and can create/update a draft PR by default.
+
+## Changelog
+
+See `CHANGELOG.md` for a summarized history of releases (notably v0.2.0 which introduced non-interactive mode, Pages verification tuning, and spinner UX improvements). For full diffs use GitHub Releases or compare view.
