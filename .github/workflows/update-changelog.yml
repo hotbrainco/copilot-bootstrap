@@ -1,0 +1,42 @@
+name: Update Changelog
+
+on:
+  release:
+    types: [released]
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Git config
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Fetch release notes
+        id: notes
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json body -q '.body' > release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Append to CHANGELOG
+        run: |
+          chmod +x scripts/append-changelog.sh
+          ./scripts/append-changelog.sh "$GITHUB_REF_NAME" release-notes.md || echo "No changelog update needed."
+      - name: Commit changes
+        run: |
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changes to commit."
+          else
+            git add CHANGELOG.md
+            git commit -m "chore: changelog: $GITHUB_REF_NAME"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
