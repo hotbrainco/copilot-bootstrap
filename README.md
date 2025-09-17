@@ -174,8 +174,15 @@ bootstrap/scripts/iterate.sh docs
 This repo includes a GitHub Actions workflow at `.github/workflows/docs-pages.yml` that builds MkDocs and deploys to GitHub Pages on pushes to `main`. The workflow uses `actions/configure-pages` + `actions/upload-pages-artifact` + `actions/deploy-pages`.
 
 One-time setup:
-- The bootstrap script automatically enables GitHub Pages for workflow builds when `gh` and an `origin` remote are available. Set `BOOTSTRAP_PAGES_SKIP=true` to opt out.
-- If you’re using the iterate docs step later, it can also enable Pages automatically.
+- When a Pages workflow is present, the installer will explicitly ask: "Enable GitHub Pages (publish docs via Actions)?" Default is No. You can control the default with `BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW`.
+- Set `BOOTSTRAP_PAGES_SKIP=true` to skip entirely, or `BOOTSTRAP_PAGES_ENABLE=false` to disable programmatic enabling.
+- If you’re using the iterate docs step later, it can also enable Pages automatically (and you can use the same env flags).
+
+Optional verification:
+- After enabling Pages (either during install or via iterate), the installer can verify that Pages is live by:
+  - Polling the latest Pages build status via GitHub API, then
+  - Probing the site URL until it returns HTTP 200/301/302.
+- Control this prompt via `BOOTSTRAP_DEFAULT_VERIFY_PAGES=Y|N` (default Y when interactive).
 
 Manual fallback (if needed):
 - With `gh`:
@@ -275,8 +282,10 @@ Default prompt choices can also be controlled via dedicated environment variable
 - `BOOTSTRAP_DEFAULT_INSTALL_MKDOCS`: Y|N (default Y)
 - `BOOTSTRAP_DEFAULT_COMMIT_DOCS`: Y|N (default Y)
 - `BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE`: Y|N (default N)
+- `BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_RUN_DOCS_NOW`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_REPO_VISIBILITY`: public|private (default private)
+- `BOOTSTRAP_DEFAULT_VERIFY_PAGES`: Y|N (default Y)
 
 Example overrides:
 

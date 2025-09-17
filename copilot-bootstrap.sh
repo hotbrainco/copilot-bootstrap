@@ -33,6 +33,8 @@ DEFAULT_COMMIT_DOCS="${BOOTSTRAP_DEFAULT_COMMIT_DOCS:-Y}"
 DEFAULT_ENABLE_PAGES_INTERACTIVE="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE:-N}"
 DEFAULT_RUN_DOCS_NOW="${BOOTSTRAP_DEFAULT_RUN_DOCS_NOW:-N}"
 DEFAULT_REPO_VISIBILITY="${BOOTSTRAP_DEFAULT_REPO_VISIBILITY:-private}"
+DEFAULT_VERIFY_PAGES="${BOOTSTRAP_DEFAULT_VERIFY_PAGES:-Y}"
+DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
 
 # Interactive helpers
 is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
@@ -258,6 +260,79 @@ fi
 		return 1
 	}
 
+	# Verify Pages deployment and availability
+	pages_slug_from_origin() {
+		git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+		git remote get-url origin >/dev/null 2>&1 || return 1
+		local url slug
+		url=$(git remote get-url origin)
+		case "$url" in
+			git@github.com:*) slug="${url#git@github.com:}"; slug="${slug%.git}" ;;
+			https://github.com/*) slug="${url#https://github.com/}"; slug="${slug%.git}" ;;
+			*) return 1 ;;
+		esac
+		printf "%s" "$slug"
+	}
+
+	resolve_pages_url() {
+		command -v gh >/dev/null 2>&1 || return 1
+		local slug owner repo url
+		slug=$(pages_slug_from_origin) || return 1
+		owner="${slug%%/*}"
+		repo="${slug##*/}"
+		# Try API for canonical URL; fallback to default project pages URL
+		url=$(gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages" -q .html_url 2>/dev/null || true)
+		if [[ -z "$url" || "$url" == "null" ]]; then
+			url="https://${owner}.github.io/${repo}/"
+		fi
+		printf "%s" "$url"
+	}
+
+	pages_enabled() {
+		command -v gh >/dev/null 2>&1 || return 1
+		local slug
+		slug=$(pages_slug_from_origin) || return 1
+		gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages" >/dev/null 2>&1
+	}
+
+	wait_for_pages_build() {
+		command -v gh >/dev/null 2>&1 || return 1
+		local slug status tries=0 max_tries=80
+		slug=$(pages_slug_from_origin) || return 1
+		while (( tries < max_tries )); do
+			status=$(gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages/builds/latest" -q .status 2>/dev/null || echo "unknown")
+			if [[ "$status" == "built" ]]; then
+				return 0
+			fi
+			if [[ "$status" == "errored" ]]; then
+				echo "Pages build errored (check Actions logs)."
+				return 1
+			fi
+			sleep 3
+			tries=$((tries+1))
+		done
+		echo "Timed out waiting for Pages build to complete."
+		return 1
+	}
+
+	verify_pages_reachable() {
+		local url status tries=0 max_tries=60
+		url=$(resolve_pages_url) || return 1
+		while (( tries < max_tries )); do
+			status=$(curl -sSIf "$url" -o /dev/null -w "%{http_code}" || echo "000")
+			case "$status" in
+				200|301|302)
+					echo "✅ GitHub Pages is live at: $url"
+					return 0
+					;;
+			esac
+			sleep 2
+			tries=$((tries+1))
+		done
+		echo "WARN: Could not confirm Pages is live yet. Try again soon: $url"
+		return 1
+	}
+
 	if yesno "Set up documentation now?" "$DEFAULT_SETUP_DOCS"; then
 		echo ""
 		echo "📚 Documentation options:"
@@ -313,17 +388,23 @@ fi
 		fi
 
 
-		# Auto-enable Pages when a Pages workflow is present, unless skipped
+		# Offer to enable GitHub Pages when a Pages workflow is present
 		if command -v gh >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git remote get-url origin >/dev/null 2>&1; then
 			if [[ -f .github/workflows/docs-pages.yml ]] || grep -R "deploy-pages@" -n .github/workflows >/dev/null 2>&1; then
 				if [[ "${BOOTSTRAP_PAGES_SKIP:-}" == "true" ]]; then
 					echo "Skipping Pages enable (BOOTSTRAP_PAGES_SKIP=true)"
+				elif [[ "${BOOTSTRAP_PAGES_ENABLE:-}" == "false" ]]; then
+					echo "Pages enable disabled (BOOTSTRAP_PAGES_ENABLE=false)"
 				else
-					if [[ "${BOOTSTRAP_PAGES_ENABLE:-}" == "false" ]]; then
-						echo "Pages auto-enable disabled (BOOTSTRAP_PAGES_ENABLE=false)"
+					if pages_enabled; then
+						echo "GitHub Pages is already enabled for this repository."
 					else
-						echo "🔄 Enabling GitHub Pages for this repo (Actions build)"
-						enable_pages_via_gh || true
+						if yesno "Enable GitHub Pages (publish docs via Actions)?" "$DEFAULT_ENABLE_PAGES_NOW"; then
+							echo "🔄 Enabling GitHub Pages for this repo (Actions build)"
+							enable_pages_via_gh || true
+						else
+							echo "GitHub Pages not enabled. You can enable later in repo settings or via gh."
+						fi
 					fi
 				fi
 			else
@@ -343,6 +424,15 @@ fi
 			else
 				bash bootstrap/scripts/iterate.sh doctor || true
 				ITERATE_PAGES_ENABLE=true bash bootstrap/scripts/iterate.sh docs || true
+			fi
+		fi
+
+		# Optional verification that GitHub Pages is live
+		if pages_enabled; then
+			if yesno "Verify GitHub Pages is live now?" "$DEFAULT_VERIFY_PAGES"; then
+				echo "🔎 Verifying GitHub Pages deployment and availability"
+				wait_for_pages_build || true
+				verify_pages_reachable || true
 			fi
 		fi
 	fi
