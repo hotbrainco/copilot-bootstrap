@@ -310,6 +310,21 @@ Pages verification and spinner tuning:
 - `BOOTSTRAP_PAGES_PROBE_INTERVAL_SECONDS`: seconds between URL probes (default 2)
 - `BOOTSTRAP_SPINNER_DELAY_SECONDS`: delay per spinner frame in seconds (default 0.05)
 
+Non-interactive automation:
+- `BOOTSTRAP_INTERACTIVE=false` suppresses all prompts and auto-accepts the configured defaults (use `BOOTSTRAP_DEFAULT_*` vars to shape behavior). When false, docs choice uses `DEFAULT_DOCS_CHOICE` automatically, git init and remote creation proceed without user input.
+- `BOOTSTRAP_REMOTE_URL` (optional) a git remote URL to add as `origin` in non-interactive mode instead of creating a repo with `gh repo create`.
+
+Example fully unattended install that initializes git, uses existing remote, skips docs setup:
+```bash
+TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
+BOOTSTRAP_INTERACTIVE=false \
+BOOTSTRAP_DEFAULT_INIT_GIT=Y \
+BOOTSTRAP_DEFAULT_CONNECT_GITHUB=Y \
+BOOTSTRAP_REMOTE_URL=git@github.com:myorg/myapp.git \
+BOOTSTRAP_DEFAULT_SETUP_DOCS=N \
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh)"
+```
+
 Example overrides:
 
 ```bash
