@@ -46,12 +46,19 @@ VERIFY_PAGES_PROBE_TIMEOUT="${BOOTSTRAP_PAGES_PROBE_TIMEOUT_SECONDS:-120}"
 VERIFY_PAGES_PROBE_INTERVAL="${BOOTSTRAP_PAGES_PROBE_INTERVAL_SECONDS:-2}"
 
 # Interactive helpers
-is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
+is_tty() {
+	[[ "${BOOTSTRAP_INTERACTIVE:-}" == "false" ]] && return 1
+	[[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0
+	[[ -t 1 || -t 0 ]] && return 0
+	[[ -r /dev/tty ]]
+}
 yesno() {
 	local prompt="$1" default="${2:-Y}" ans
 	local suffix=" [y/N]"
 	[[ "$default" == "Y" || "$default" == "y" ]] && suffix=" [Y/n]"
-	if [[ -r /dev/tty ]]; then
+	if [[ "${BOOTSTRAP_INTERACTIVE:-}" == "false" ]]; then
+		ans="$default"
+	elif [[ -r /dev/tty ]]; then
 		# Prompt via the controlling terminal when available (works even when stdin is a pipe)
 		read -r -p "$prompt$suffix " ans < /dev/tty || true
 	elif [[ -t 0 || -t 1 ]]; then
@@ -165,9 +172,13 @@ fi
 				echo "✅ Initialized git repo (main) and created initial commit"
 			fi
 		fi
-		if in_git_repo && ! has_origin_remote; then
-			if yesno "Connect this repo to GitHub now?" "$DEFAULT_CONNECT_GITHUB"; then
-				read -r -p "Enter existing GitHub repo URL (ssh/https), or leave blank to create via gh: " GH_URL < /dev/tty || true
+			if in_git_repo && ! has_origin_remote; then
+				if yesno "Connect this repo to GitHub now?" "$DEFAULT_CONNECT_GITHUB"; then
+					if [[ "${BOOTSTRAP_INTERACTIVE:-}" == "false" ]]; then
+						GH_URL="${BOOTSTRAP_REMOTE_URL:-}"
+					else
+						read -r -p "Enter existing GitHub repo URL (ssh/https), or leave blank to create via gh: " GH_URL < /dev/tty || true
+					fi
 				# Validate that GH_URL looks like a git URL, not literal text like "leave blank"
 				if [[ -n "${GH_URL:-}" ]] && [[ "$GH_URL" =~ ^(git@|https?://) ]]; then
 					git remote add origin "$GH_URL" 2>/dev/null || git remote set-url origin "$GH_URL" || true
@@ -177,10 +188,15 @@ fi
 					fi
 				elif command -v gh >/dev/null 2>&1; then
 					DEFAULT_NAME="${PWD##*/}"
-					read -r -p "New repo name [${DEFAULT_NAME}]: " NEW_NAME < /dev/tty || true
-					NEW_NAME=${NEW_NAME:-$DEFAULT_NAME}
-					read -r -p "Visibility (private/public) [${DEFAULT_REPO_VISIBILITY}]: " VIS < /dev/tty || true
-					VIS=${VIS:-$DEFAULT_REPO_VISIBILITY}
+					if [[ "${BOOTSTRAP_INTERACTIVE:-}" == "false" ]]; then
+						NEW_NAME="$DEFAULT_NAME"
+						VIS="$DEFAULT_REPO_VISIBILITY"
+					else
+						read -r -p "New repo name [${DEFAULT_NAME}]: " NEW_NAME < /dev/tty || true
+						NEW_NAME=${NEW_NAME:-$DEFAULT_NAME}
+						read -r -p "Visibility (private/public) [${DEFAULT_REPO_VISIBILITY}]: " VIS < /dev/tty || true
+						VIS=${VIS:-$DEFAULT_REPO_VISIBILITY}
+					fi
 					ensure_initial_commit
 					# Allow org/name input; gh uses current user if no owner provided
 					# Note: --confirm/-y is deprecated in newer gh; run interactively without it
@@ -395,8 +411,12 @@ fi
 		echo "  3. Docusaurus (Node.js) - React-based, feature-rich"
 		echo "  4. Simple Markdown - No dependencies, works with GitHub Pages"
 		echo ""
-	read -r -p "Choose option (1-4) [${DEFAULT_DOCS_CHOICE}]: " docs_choice
-	docs_choice=${docs_choice:-$DEFAULT_DOCS_CHOICE}
+	if [[ "${BOOTSTRAP_INTERACTIVE:-}" == "false" ]]; then
+		docs_choice="$DEFAULT_DOCS_CHOICE"
+	else
+		read -r -p "Choose option (1-4) [${DEFAULT_DOCS_CHOICE}]: " docs_choice
+		docs_choice=${docs_choice:-$DEFAULT_DOCS_CHOICE}
+	fi
 		
 		case "$docs_choice" in
 			1)
