@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Lightweight dispatcher for Copilot Bootstrap quality-of-life commands.
+# Goal: allow syntax like:
+#   cb iterate
+#   cb build
+#   cb features list
+#   cb features enable docs:mkdocs  (future once features.sh exists)
+#   cb doctor
+#   cb pr
+# This avoids long bash invocations and centralizes help.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ITERATE="${SCRIPT_DIR}/iterate.sh"
+FEATURES="${SCRIPT_DIR}/features.sh"  # may not exist yet
+
+usage() {
+  cat <<EOF
+Copilot Bootstrap Command (cb)
+Usage:
+  cb iterate            # run full iteration loop
+  cb build|test|docs|git|pr|doctor
+  cb teardown [--yes --delete-remote --dry-run]  # safely tear down current repo (not allowed in copilot-bootstrap repo)
+  cb tests              # run internal bootstrap test scripts (if present)
+  cb dry-run iterate    # convenience: sets ITERATE_DRY_RUN=true for this call
+  cb features ...       # proxy to features.sh (when available)
+  cb version            # show iterate script hash/version (best effort)
+  cb help               # this help
+
+Environment passthrough: honors ITERATE_* variables.
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+  usage; exit 0
+fi
+
+first="$1"; shift || true
+
+# Allow a "dry-run" prefix: cb dry-run iterate
+if [[ "$first" == "dry-run" ]]; then
+  export ITERATE_DRY_RUN=true
+  if [[ $# -eq 0 ]]; then
+    echo "Specify a subcommand after dry-run" >&2; exit 1
+  fi
+  first="$1"; shift || true
+fi
+
+case "$first" in
+  help|-h|--help)
+    usage ;;
+  version)
+    if [[ -f "$ITERATE" ]]; then
+      echo -n "iterate.sh checksum: "
+      if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$ITERATE" | awk '{print $1}'; else md5 "$ITERATE" 2>/dev/null || echo "(hash tool unavailable)"; fi
+      # Try to read tag from installer script one directory up if present
+      echo -n "repo version hint: "
+      grep -Eo 'RELEASE_NOTES_[0-9]+' "$SCRIPT_DIR"/../../RELEASE_NOTES_* 2>/dev/null | head -n1 || echo "unknown"
+    else
+      echo "iterate.sh not found" >&2; exit 1
+    fi
+    ;;
+  iterate|all|build|test|docs|git|pr|doctor)
+    if [[ ! -x "$ITERATE" ]]; then
+      echo "Missing iterate.sh at $ITERATE" >&2; exit 1
+    fi
+    exec bash "$ITERATE" "$first" "$@" ;;
+  features)
+    if [[ ! -f "$FEATURES" ]]; then
+      echo "features.sh not found yet. Future feature toggles will live there." >&2
+      exit 1
+    fi
+    exec bash "$FEATURES" "$@" ;;
+  tests)
+    if [[ ! -x "${SCRIPT_DIR}/run-tests.sh" ]]; then
+      echo "run-tests.sh not found or not executable" >&2; exit 1
+    fi
+    exec bash "${SCRIPT_DIR}/run-tests.sh" ;;
+  teardown)
+    # shellcheck source=../features/teardown.sh
+    if [[ ! -f "${SCRIPT_DIR}/../features/teardown.sh" ]]; then
+      echo "teardown feature script missing" >&2; exit 1
+    fi
+    . "${SCRIPT_DIR}/../features/teardown.sh"
+    cb::cmd::teardown "$@" ;;
+  *)
+    echo "Unknown subcommand: $first" >&2
+    usage
+    exit 1 ;;
+ esac

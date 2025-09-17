@@ -32,6 +32,10 @@ Status buckets
   - Acceptance:
     - [ ] Document recommended env overrides for slow orgs
     - [ ] Add adaptive backoff if Pages API returns 202 repeatedly
+ - [ ] Feature manager enhancements (auto-complete & purge)
+   - Acceptance:
+     - [ ] `features.sh` supports `completion zsh|bash` output
+     - [ ] Safe purge option removes untouched scaffold files for a docs feature
 
 ## Later
 - [ ] Optional: Release notes templating (markdown section ordering)
@@ -40,8 +44,20 @@ Status buckets
 - [ ] Optional: Detect and warn on missing `GITHUB_TOKEN` before Pages enable attempt
   - Acceptance:
     - [ ] Clear pre-flight message instead of silent skip
+ - [ ] Coverage & security feature modules
+   - Acceptance:
+     - [ ] `coverage:report` feature runs coverage tooling if present
+     - [ ] `security:scan` feature calls minimal audit tools (npm audit, pip-audit) with soft-skip
 
 ## Done
+- [x] Feature toggle system (config + dispatcher) — Completed
+  - Acceptance:
+    - [x] `.iterate.json` contains `features{}` map with defaults
+    - [x] `bootstrap/scripts/features.sh` lists, enables, disables features, persisting via jq
+    - [x] Docs step only runs when a docs:* feature is enabled (unless env override)
+    - [x] PR auto-step gated by `pr:auto` feature (still can run explicit `iterate.sh pr`)
+    - [x] `cb features` proxy works
+  - Notes: Non-destructive disable semantics; future purge & completion planned.
 - [x] Add changelog compare links automation — Completed
   - Acceptance:
     - [x] Each new inserted version section includes a GitHub compare link

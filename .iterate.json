@@ -11,4 +11,15 @@
   "dryRun": "false",
   "skipGit": "false",
   "skipPr": "true"
+  ,"features": {
+    "sandbox": "enabled",
+    "pr:auto": "enabled",
+    "docs:mkdocs": "disabled",
+    "docs:vitepress": "disabled",
+    "docs:docusaurus": "disabled",
+    "docs:simple": "disabled",
+    "github:pages": "disabled",
+    "changelog": "disabled",
+    "update:script": "enabled"
+  }
 }

@@ -19,6 +19,20 @@ ITERATE_SKIP_GIT="${ITERATE_SKIP_GIT-}"
 ITERATE_SKIP_PR="${ITERATE_SKIP_PR-}"
 ITERATE_PAGES_ENABLE="${ITERATE_PAGES_ENABLE-}"
 
+# -------- Feature flags (from .iterate.json if jq present) --------
+feature_state() {
+	local id="$1"
+	if [[ -f .iterate.json ]] && command -v jq >/dev/null 2>&1; then
+		jq -r --arg f "$id" '.features[$f] // "unset"' .iterate.json 2>/dev/null || echo unset
+	else
+		echo unset
+	fi
+}
+
+is_feature_enabled() {
+	[[ "$(feature_state "$1")" == "enabled" ]]
+}
+
 # ---------- Helpers ----------
 die() { echo "ERROR: $*" >&2; exit 1; }
 warn() { echo "WARN: $*" >&2; }
@@ -299,8 +313,17 @@ step_test() {
 }
 
 step_docs() {
+	# Legacy env override takes precedence
 	if [[ "$ITERATE_SKIP_DOCS" == "true" ]]; then
-		echo "==> Docs step skipped by config"; return
+		echo "==> Docs step skipped by env config"; return
+	fi
+	# If no env override, require at least one docs:* feature enabled
+	if ! is_feature_enabled docs:mkdocs && \
+	   ! is_feature_enabled docs:vitepress && \
+	   ! is_feature_enabled docs:docusaurus && \
+	   ! is_feature_enabled docs:simple; then
+		echo "==> No documentation feature enabled; skipping docs"
+		return
 	fi
 	local pm; pm="$(pm_detect)"
 	local system; system="$(detect_docs_system)"
@@ -415,8 +438,13 @@ step_git() {
 
 step_pr() {
 	echo "==> Create or update PR"
+	# Legacy env override
 	if [[ "${ITERATE_SKIP_PR}" == "true" ]]; then
-		echo "PR step skipped by config"; return
+		echo "PR step skipped by env config"; return
+	fi
+	# Feature gating: pr:auto must be enabled (unless explicitly running 'pr' cmd)
+	if [[ "$cmd" != "pr" ]] && ! is_feature_enabled pr:auto; then
+		echo "PR auto-step disabled by feature state"; return
 	fi
 	if ! in_git_repo; then
 		echo "Not a git repository; skipping PR"

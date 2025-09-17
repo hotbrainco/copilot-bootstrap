@@ -110,6 +110,93 @@ bootstrap/scripts/iterate.sh iterate
 
 The script will automatically skip unavailable steps, and prints a preflight summary first.
 
+### QoL Command Wrapper (Experimental)
+
+You can use the lightweight `cb` dispatcher (installed at `bootstrap/scripts/cb`) to shorten commands:
+
+```bash
+# Make it executable (once)
+chmod +x bootstrap/scripts/cb
+
+# Add to PATH for current shell session
+export PATH="$PWD/bootstrap/scripts:$PATH"
+
+# Run iteration loop
+cb iterate
+
+# Individual steps
+cb build
+cb test
+cb docs
+cb git
+cb pr
+cb doctor
+
+# Run internal bootstrap test suite (if present)
+cb tests
+
+# Safely tear down a test repo (NOT the copilot-bootstrap repo itself)
+cb teardown --dry-run                # show plan only
+cb teardown                          # interactive local delete
+cb teardown --archive                # archive before delete
+cb teardown --delete-remote          # ask to also remove remote
+cb teardown --delete-remote --yes    # skip first confirmation
+cb teardown --keep-dir --archive     # only archive, keep directory
+
+# Dry-run convenience
+cb dry-run iterate
+
+# (Future) Feature toggles once features.sh lands
+cb features list
+cb features enable docs:mkdocs
+```
+
+Persistent PATH suggestion (add to your shell profile):
+```bash
+echo 'export PATH="$HOME/path/to/your/repo/bootstrap/scripts:$PATH"' >> ~/.zshrc
+```
+
+If using Node tooling you can also expose it via an npm script:
+```json
+{
+  "scripts": { "iterate": "bootstrap/scripts/cb iterate" }
+}
+```
+
+Roadmap: shell completion (`cb <TAB>`), feature registry commands, and autoversion display.
+
+## Feature Toggles (Modular Components)
+
+You can enable or disable optional capabilities after initial bootstrap using the feature manager.
+
+Current feature IDs:
+
+- `docs:mkdocs` / `docs:vitepress` / `docs:docusaurus` / `docs:simple`
+- `github:pages` (logical flag; Pages enabling still needs a docs workflow)
+- `pr:auto` (controls whether PR creation runs during `iterate`)
+- `sandbox` (always effectively present; toggle is informational)
+- `changelog` (exposes changelog helper script)
+- `update:script` (presence of update tooling)
+
+States are stored in `.iterate.json` under `features{}`; env vars still override (e.g. `ITERATE_SKIP_DOCS`). If no docs feature is enabled, the docs step is skipped.
+
+Commands:
+```bash
+# List features
+cb features list
+
+# Enable MkDocs docs (creates mkdocs.yml + docs/ scaffold if missing)
+cb features enable docs:mkdocs
+
+# Disable automatic PR step (iterate will skip pr)
+cb features disable pr:auto
+
+# Re-run iteration
+cb iterate
+```
+
+Non-destructive disable: files are not deleted; you can remove them manually if you fully abandon a system.
+
 ## What’s Included
 
 - `.vscode/tasks.json`: VS Code tasks to drive the flow.

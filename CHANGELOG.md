@@ -1,4 +1,22 @@
 # Changelog
+## [v0.3.0] - 2025-09-17
+[Compare with v0.2.2](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.2.2...v0.3.0)
+
+### Added
+- `cb teardown` command with safeguards (refuses on core repo) and options: `--delete-remote`, `--archive`, `--keep-dir`, `--dry-run`, `--yes`.
+- `--archive` + `--keep-dir` options for safe snapshot before removal.
+- Test runner: `cb tests` executing scripts in `bootstrap/scripts/tests/`.
+- Teardown unit test stub (`test-teardown.sh`).
+
+### Changed
+- Dispatcher help now includes teardown/tests.
+
+### Internal
+- Documentation updated (README) with new commands.
+
+### Notes
+Prepares for broader feature test coverage in future minor versions.
+
 ## [v0.2.2] - 2025-09-17
 [Compare with v0.2.1](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.2.1...v0.2.2)
 
