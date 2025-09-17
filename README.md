@@ -34,10 +34,16 @@ Prefer a pinned version or no pipe-to-shell? See below.
 
 Latest release (auto) — no pipe-to-shell alternative:
 
-Pinned version (replace vX.Y.Z with a specific tag):
+```bash
+TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh -o copilot-bootstrap.sh
+bash copilot-bootstrap.sh
+```
+
+Pinned version (optional; replace vX.Y.Z with a specific tag):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/v0.1.16/copilot-bootstrap.sh -o copilot-bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/vX.Y.Z/copilot-bootstrap.sh -o copilot-bootstrap.sh
 bash copilot-bootstrap.sh
 ```
 
@@ -183,7 +189,7 @@ Optional verification:
   - Polling the latest Pages build status via GitHub API, then
   - Probing the site URL until it returns HTTP 200/301/302.
   - A small spinner animation is shown while waiting (TTY only).
-- Control this prompt via `BOOTSTRAP_DEFAULT_VERIFY_PAGES=Y|N` (default Y when interactive).
+- Control this prompt via `BOOTSTRAP_DEFAULT_VERIFY_PAGES=Y|N` (default Y when interactive). Advanced tuning: see the env variables below for timeouts/intervals and spinner speed.
 
 Manual fallback (if needed):
 - With `gh`:
@@ -209,7 +215,7 @@ To update the bootstrap workflow in an existing project to the latest release (o
 ```bash
 bash bootstrap/scripts/update.sh
 # or pin a version
-BOOTSTRAP_TAG=v0.1.16 bash bootstrap/scripts/update.sh
+BOOTSTRAP_TAG=vX.Y.Z bash bootstrap/scripts/update.sh
 ```
 This updates `bootstrap/scripts/*` (with a local backup) and adds any missing files under `.github/` and `.vscode/` without overwriting your changes.
 ## Behavior Overview
@@ -296,6 +302,13 @@ FAQ:
 - `BOOTSTRAP_DEFAULT_RUN_DOCS_NOW`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_REPO_VISIBILITY`: public|private (default private)
 - `BOOTSTRAP_DEFAULT_VERIFY_PAGES`: Y|N (default Y)
+
+Pages verification and spinner tuning:
+- `BOOTSTRAP_PAGES_BUILD_TIMEOUT_SECONDS`: total seconds to wait for GitHub Pages build status (default 240)
+- `BOOTSTRAP_PAGES_BUILD_INTERVAL_SECONDS`: seconds between build status polls (default 3)
+- `BOOTSTRAP_PAGES_PROBE_TIMEOUT_SECONDS`: total seconds to probe the Pages URL (default 120)
+- `BOOTSTRAP_PAGES_PROBE_INTERVAL_SECONDS`: seconds between URL probes (default 2)
+- `BOOTSTRAP_SPINNER_DELAY_SECONDS`: delay per spinner frame in seconds (default 0.05)
 
 Example overrides:
 
