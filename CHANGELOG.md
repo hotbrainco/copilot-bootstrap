@@ -1,4 +1,7 @@
 # Changelog
+## [v0.2.1] - 2025-09-17
+Manual dispatch retry body for v0.2.1
+
 
 All notable changes to this project are documented here. This project follows a pragmatic pre-1.0 SemVer approach: minor version bumps (0.x) group meaningful UX / capability improvements; patch-level tags inside a minor cycle may roll into the next minor summary.
 
