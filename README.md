@@ -17,7 +17,7 @@ What this does:
 Doctor (preflight):
 
 - What it is: a read-only check that detects your stack (package manager, docs, tests, git/gh) and prints what the iteration loop would do. It doesn’t change your repo.
-- Run it right after install:
+- The installer runs doctor automatically after docs setup (controllable via `BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL`). You can also run it any time:
 
 ```bash
 bash bootstrap/scripts/iterate.sh doctor
@@ -163,7 +163,7 @@ bash bootstrap/scripts/setup-docs.sh simple
 
 ### Build via iterate
 
-For any docs system, you can also build via the iterate docs step:
+The installer builds docs automatically after setup (controllable via `BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL`). You can also build via the iterate docs step:
 
 ```bash
 bootstrap/scripts/iterate.sh docs
@@ -282,12 +282,14 @@ Default prompt choices can also be controlled via dedicated environment variable
 - `BOOTSTRAP_DEFAULT_DOCS_CHOICE`: 1|2|3|4 (default 1)
 - `BOOTSTRAP_DEFAULT_INSTALL_MKDOCS`: Y|N (default Y)
 - `BOOTSTRAP_DEFAULT_COMMIT_DOCS`: Y|N (default Y)
+ - `BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL`: Y|N (default Y)
+ - `BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL`: Y|N (default Y)
 Behavior notes:
 - Docs commit: when docs are created/updated during install, the script auto-commits and pushes them if `DEFAULT_COMMIT_DOCS=Y` (default). Set `BOOTSTRAP_DEFAULT_COMMIT_DOCS=N` to skip auto-commit.
 - Pages verification: shows an animated spinner while waiting for the Pages build status and URL reachability check.
 
 FAQ:
-- "Run doctor and build docs now?": runs a quick preflight (doctor) to detect tools and settings, then builds the docs locally (e.g., `mkdocs build`). It doesn’t publish anything; it just validates your docs setup and generates the local `site/` folder.
+- Automatic doctor/docs after setup: the installer runs a quick preflight (doctor) to detect tools and settings, then builds the docs locally (e.g., `mkdocs build`). It doesn’t publish anything; it just validates your docs setup and generates the local `site/` folder. Control via `BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL` and `BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL`.
 - "🔎 Verifying GitHub Pages deployment and availability": after enabling Pages, the script checks that GitHub’s Pages build has completed and that your public site URL is reachable (HTTP 200/301/302). This confirms your docs are actually live on Pages.
 - `BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE`: Y|N (default N)
 - `BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW`: Y|N (default N)
