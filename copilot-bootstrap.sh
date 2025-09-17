@@ -38,6 +38,13 @@ DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
 DEFAULT_RUN_DOCTOR_ON_INSTALL="${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:-Y}"
 DEFAULT_BUILD_DOCS_ON_INSTALL="${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:-Y}"
 
+# Pages verification tuning (overridable via env)
+# Seconds to wait and poll intervals for build status and URL probe
+VERIFY_PAGES_BUILD_TIMEOUT="${BOOTSTRAP_PAGES_BUILD_TIMEOUT_SECONDS:-240}"
+VERIFY_PAGES_BUILD_INTERVAL="${BOOTSTRAP_PAGES_BUILD_INTERVAL_SECONDS:-3}"
+VERIFY_PAGES_PROBE_TIMEOUT="${BOOTSTRAP_PAGES_PROBE_TIMEOUT_SECONDS:-120}"
+VERIFY_PAGES_PROBE_INTERVAL="${BOOTSTRAP_PAGES_PROBE_INTERVAL_SECONDS:-2}"
+
 # Interactive helpers
 is_tty() { [[ "${BOOTSTRAP_INTERACTIVE:-}" == "true" ]] && return 0; [[ -t 1 || -t 0 ]] && return 0; [[ -r /dev/tty ]]; }
 yesno() {
@@ -316,8 +323,16 @@ fi
 
 	wait_for_pages_build() {
 		command -v gh >/dev/null 2>&1 || return 1
-		local slug status tries=0 max_tries=80
+		local slug status tries=0
+		local max_tries interval
 		slug=$(pages_slug_from_origin) || return 1
+		# Derive tries from timeout/interval, with sane fallbacks
+		interval=${VERIFY_PAGES_BUILD_INTERVAL:-3}
+		[[ "$interval" -gt 0 ]] || interval=3
+		local total=${VERIFY_PAGES_BUILD_TIMEOUT:-240}
+		[[ "$total" -gt 0 ]] || total=240
+		max_tries=$(( total / interval ))
+		(( max_tries > 0 )) || max_tries=80
 		spinner_init "Waiting for Pages build…"
 		while (( tries < max_tries )); do
 			status=$(gh api -H "Accept: application/vnd.github+json" "repos/${slug}/pages/builds/latest" -q .status 2>/dev/null || echo "unknown")
@@ -331,17 +346,24 @@ fi
 				return 1
 			fi
 			spinner_step
-			sleep 3
+			sleep "$interval"
 			tries=$((tries+1))
 		done
 		spinner_end
-		echo "Timed out waiting for Pages build to complete."
+		# Do not emit a scary timeout yet; the site may already be live.
 		return 1
 	}
 
 	verify_pages_reachable() {
-		local url status tries=0 max_tries=60
+		local url status tries=0
+		local max_tries interval total
 		url=$(resolve_pages_url) || return 1
+		interval=${VERIFY_PAGES_PROBE_INTERVAL:-2}
+		[[ "$interval" -gt 0 ]] || interval=2
+		total=${VERIFY_PAGES_PROBE_TIMEOUT:-120}
+		[[ "$total" -gt 0 ]] || total=120
+		max_tries=$(( total / interval ))
+		(( max_tries > 0 )) || max_tries=60
 		spinner_init "Probing Pages URL…"
 		while (( tries < max_tries )); do
 			status=$(curl -sSIf "$url" -o /dev/null -w "%{http_code}" || echo "000")
@@ -353,7 +375,7 @@ fi
 					;;
 			esac
 			spinner_step
-			sleep 2
+			sleep "$interval"
 			tries=$((tries+1))
 		done
 		spinner_end
@@ -464,8 +486,14 @@ fi
 		if pages_enabled; then
 			if yesno "Verify GitHub Pages is live now?" "$DEFAULT_VERIFY_PAGES"; then
 				echo "🔎 Verifying GitHub Pages deployment and availability"
-				wait_for_pages_build || true
-				verify_pages_reachable || true
+				# First, try to wait for the Pages build to report built; if this times out,
+				# we'll still probe the URL below and only warn if the probe also fails.
+				if ! wait_for_pages_build; then
+					: # build polling timed out or not available
+				fi
+				if ! verify_pages_reachable; then
+					echo "Timed out waiting for Pages build to complete."  # only shown if probe also failed
+				fi
 			fi
 		fi
 	fi
