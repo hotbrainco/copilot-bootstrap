@@ -10,6 +10,7 @@ if [[ $# -lt 2 ]]; then
   exit 1
 fi
 TAG="$1"; BODY_SRC="$2"
+REPO_SLUG="${GITHUB_REPOSITORY:-hotbrainco/copilot-bootstrap}"
 DATE=$(date +%Y-%m-%d)
 CHANGELOG="CHANGELOG.md"
 
@@ -38,7 +39,14 @@ if grep -q "^## \[$TAG\]" "$CHANGELOG"; then
   exit 0
 fi
 
-NEW_SECTION="## [$TAG] - $DATE\n${BODY_CONTENT}\n"
+# Determine previous tag already in changelog (first occurring after header)
+PREV_TAG=$(grep -E '^## \[v?[0-9]+\.[0-9]+\.[0-9]+\]' "$CHANGELOG" | sed -E 's/^## \[([^]]+)\].*/\1/' | head -n1 || true)
+COMPARE_LINE=""
+if [[ -n "$PREV_TAG" ]]; then
+  COMPARE_URL="https://github.com/${REPO_SLUG}/compare/${PREV_TAG}...${TAG}"
+  COMPARE_LINE="[Compare with ${PREV_TAG}](${COMPARE_URL})\n\n"
+fi
+NEW_SECTION="## [$TAG] - $DATE\n${COMPARE_LINE}${BODY_CONTENT}\n"
 
 # Insert after first line beginning with # Changelog
 awk -v section="$NEW_SECTION" 'NR==1{print;printed=1;next} NR==2 && printed {print section; printed=0} NR>1{print}' "$CHANGELOG" > "$CHANGELOG.tmp"
