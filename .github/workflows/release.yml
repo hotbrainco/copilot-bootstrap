@@ -1,0 +1,83 @@
+name: Release (annotated tag enforced)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract annotated tag message
+        id: notes
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "Processing tag: $tag"
+          
+          # Get tag object contents (only works if annotated)
+          body="$(git for-each-ref "refs/tags/${tag}" --format='%(contents)')"
+          trimmed="$(printf '%s' "$body" | sed '/^[[:space:]]*$/d')"
+          
+          if [ -z "$trimmed" ]; then
+            echo "::error::Tag ${tag} has no annotated message (likely a lightweight tag)."
+            echo "::error::Cannot create release without release notes!"
+            echo "::error::"
+            echo "::error::To fix this, create an annotated tag with release notes:"
+            echo "::error::  git tag -a ${tag} -m \"### New Features"
+            echo "::error::"
+            echo "::error::  - Feature 1"
+            echo "::error::  - Feature 2\""
+            echo "::error::  git push --force origin ${tag}"
+            exit 1
+          fi
+          
+          echo "Found release notes (${#trimmed} characters)"
+          echo "body<<'EOF'" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$trimmed" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "Creating release for $tag"
+          gh release create "$tag" --notes "${{ steps.notes.outputs.body }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update changelog
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "Updating CHANGELOG.md for $tag"
+          
+          # Create temp file with release notes
+          notes_file="$(mktemp)"
+          printf '%s\n' "${{ steps.notes.outputs.body }}" > "$notes_file"
+          
+          # Use our existing append-changelog script
+          chmod +x scripts/append-changelog.sh
+          ./scripts/append-changelog.sh "$tag" "$notes_file"
+          
+          echo "Changelog updated successfully"
+
+      - name: Commit changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          if git diff --quiet CHANGELOG.md; then
+            echo "No changelog changes to commit"
+          else
+            echo "Committing changelog update for ${GITHUB_REF_NAME}"
+            git add CHANGELOG.md
+            git commit -m "chore: changelog: ${GITHUB_REF_NAME}"
+            git push
+          fi
