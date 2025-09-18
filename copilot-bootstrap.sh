@@ -662,11 +662,12 @@ if yesno "Enable automated changelog updates from Releases?" "$DEFAULT_ENABLE_CH
 			cp "$SRC/.github/workflows/update-changelog.yml" ./.github/workflows/
 		fi
 	fi
-	# Copy helper script into bootstrap scripts namespace for portability
+	# Copy helper script into both bootstrap/scripts and scripts/ for workflow expectation
 	if [[ -f "$SRC/scripts/append-changelog.sh" ]]; then
-		mkdir -p ./bootstrap/scripts
+		mkdir -p ./bootstrap/scripts ./scripts
 		cp "$SRC/scripts/append-changelog.sh" ./bootstrap/scripts/
-		chmod +x ./bootstrap/scripts/append-changelog.sh || true
+		cp "$SRC/scripts/append-changelog.sh" ./scripts/
+		chmod +x ./bootstrap/scripts/append-changelog.sh ./scripts/append-changelog.sh || true
 	fi
 	echo "🧾 Auto-changelog workflow enabled (updates CHANGELOG.md on release)."
 else

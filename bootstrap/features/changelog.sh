@@ -24,7 +24,7 @@ feature_enable() {
   fi
   if [[ -f "$root/scripts/append-changelog.sh" ]]; then
     script_src="$root/scripts/append-changelog.sh"
-  elif [[ -f bootstrap/scripts/append-changelog.sh" ]]; then
+  elif [[ -f bootstrap/scripts/append-changelog.sh ]]; then
     script_src="bootstrap/scripts/append-changelog.sh"
   fi
   mkdir -p .github/workflows scripts bootstrap/scripts
@@ -51,7 +51,3 @@ feature_disable() {
   fi
 }
 feature_id="changelog"
-
-feature_detect() { [[ -f scripts/append-changelog.sh ]] && echo present || echo absent; }
-feature_enable() { feature_msg "Changelog helper present; usage: scripts/append-changelog.sh <tag> <file|- >"; }
-feature_disable() { feature_msg "Leaving helper script; disable is logical only."; }
