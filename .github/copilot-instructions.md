@@ -22,7 +22,7 @@ Conventions
 - Respect repository conventions in #file:CONTRIBUTING.md, #file:README.md, and any files in .github/ when present.
 
 Notes
-- If the "iterate" task is missing, check this bootstrap file and offer to (re)create .vscode/tasks.json and scripts/iterate.sh.
+- - If the "iterate" task is missing, check the bootstrap setup file (`bootstrap/COPILOT_BOOTSTRAP.md`) and offer to (re)create .vscode/tasks.json and bootstrap/scripts/iterate.sh.
 - If #file:ROADMAP.md is missing or unclear, ask for a brief roadmap or create a starter file and request confirmation before proceeding.
 
 Principles-only stack handling
