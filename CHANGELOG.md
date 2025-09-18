@@ -1,4 +1,9 @@
 # Changelog
+## [v0.6.2] - 2025-09-18
+[Compare with v0.6.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.0...v0.6.2)
+
+**Full Changelog**: https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.1...v0.6.2
+
 ## [v0.6.0] - 2025-09-17
 [Compare with v0.5.1](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.1...v0.6.0)
 
