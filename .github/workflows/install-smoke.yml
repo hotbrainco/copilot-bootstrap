@@ -1,0 +1,29 @@
+name: Install Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  curl-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show current commit
+        run: git rev-parse --short HEAD || true
+      - name: Fetch installer and run from empty dir
+        run: |
+          set -euo pipefail
+          echo "Creating empty workspace"
+          mkdir test-install && cd test-install
+          # Use branch ref when building on main/pr; emulate user latest tag fetch by overriding BOOTSTRAP_TAG when tagging.
+          curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/main/copilot-bootstrap.sh -o copilot-bootstrap.sh
+          bash copilot-bootstrap.sh <<'EOF'
+          Y
+          N
+          EOF
+          test -f bootstrap/scripts/iterate.sh
+      - name: Doctor (post-install)
+        run: |
+          cd test-install
+          bash bootstrap/scripts/iterate.sh doctor || true

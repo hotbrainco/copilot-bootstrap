@@ -1,4 +1,13 @@
 # Changelog
+## [v0.5.1] - 2025-09-17
+[Compare with v0.5.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.0...v0.5.1)
+
+### Fixed
+- Pipe-to-bash install: removed unsafe indirect variable expansion that caused `bash: line 45: !_v: unbound variable` under `set -u` when executing the one-liner. Initialization now uses direct parameter expansion so unset `BOOTSTRAP_DEFAULT_*` vars no longer abort the script.
+
+### Notes
+- No behavior change for existing installs; only installation robustness improved.
+
 ## [v0.5.0] - 2025-09-17
 [Compare with v0.4.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.4.0...v0.5.0)
 
