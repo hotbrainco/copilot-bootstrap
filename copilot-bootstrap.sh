@@ -548,6 +548,67 @@ fi
 # Clean up temp
 rm -rf "$TMPDIR"
 
+add_cb_to_path_prompt() {
+	# Offer to append export line for cb dispatcher to user's shell profile.
+	# Skip in non-interactive mode or if already on PATH.
+	local repo_dir path_entry shell_name profile export_line
+	repo_dir="$(pwd)"
+	path_entry="${repo_dir}/bootstrap/scripts"
+	# If cb already directly runnable, skip.
+	if command -v cb >/dev/null 2>&1; then
+		# Heuristic: ensure the resolved path matches our repo; if not, still offer
+		local existing
+		existing="$(command -v cb || true)"
+		if [[ "$existing" == "$path_entry/cb" ]]; then
+			return 0
+		fi
+	fi
+	is_tty || return 0
+	shell_name="$(basename "${SHELL:-sh}")"
+	# Choose a profile file based on shell
+	case "$shell_name" in
+		zsh) profile="$HOME/.zshrc" ;;
+		bash)
+			if [[ "$(uname -s)" == "Darwin" ]]; then
+				profile="$HOME/.bash_profile"
+			else
+				profile="$HOME/.bashrc"
+			fi
+			;;
+		fish) profile="$HOME/.config/fish/config.fish" ;;
+		*) profile="$HOME/.profile" ;;
+	esac
+	export_line="export PATH=\"$path_entry:\$PATH\""
+	# Already present?
+	if [[ -f "$profile" ]] && grep -F "$path_entry" "$profile" >/dev/null 2>&1; then
+		return 0
+	fi
+	if yesno "Add 'cb' (bootstrap dispatcher) to your PATH now? (Recommended)" "Y"; then
+		# Ensure directory exists for fish config
+		mkdir -p "$(dirname "$profile")" 2>/dev/null || true
+		{
+			echo ""
+			echo "# Added by copilot-bootstrap v0.4.0 to expose cb dispatcher"
+			if [[ "$shell_name" == "fish" ]]; then
+				echo "set -gx PATH $path_entry \$PATH"
+			else
+				echo "$export_line"
+			fi
+		} >> "$profile"
+		# Apply to current session where possible (POSIX shells)
+		if [[ "$shell_name" != "fish" ]]; then
+			export PATH="$path_entry:$PATH"
+		fi
+		echo "✅ Added $path_entry to PATH via $profile"
+		echo "   Restart your shell or 'source $profile' to persist."
+	else
+		echo "Skipped adding cb to PATH. You can add later with:"
+		echo "  echo '$export_line' >> $profile && source $profile"
+	fi
+}
+
+add_cb_to_path_prompt || true
+
 echo "✅ Copilot Bootstrap installed. Next steps:"
 echo "  bash bootstrap/scripts/iterate.sh doctor"
 echo "  ITERATE_DRY_RUN=true bash bootstrap/scripts/iterate.sh iterate"

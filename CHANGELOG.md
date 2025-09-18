@@ -1,4 +1,16 @@
 # Changelog
+## [v0.4.0] - 2025-09-17
+[Compare with v0.3.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.3.0...v0.4.0)
+
+### Added
+- Interactive installer prompt to add `bootstrap/scripts` to PATH (adds export line to detected shell profile; default Yes). Improves first-use experience of `cb` dispatcher.
+
+### Changed
+- README QoL wrapper section documents automatic PATH prompt.
+
+### Notes
+- Non-interactive installs can still opt-in by manually appending the export line. Existing PATH entries are detected to prevent duplicates.
+
 ## [v0.3.0] - 2025-09-17
 [Compare with v0.2.2](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.2.2...v0.3.0)
 

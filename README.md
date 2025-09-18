@@ -151,6 +151,8 @@ cb features list
 cb features enable docs:mkdocs
 ```
 
+During install (v0.4.0+) you will be prompted to add the `cb` dispatcher to your PATH (recommended; auto-detects your shell profile). If you skipped or are in a non-interactive install, you can still add it manually:
+
 Persistent PATH suggestion (add to your shell profile):
 ```bash
 echo 'export PATH="$HOME/path/to/your/repo/bootstrap/scripts:$PATH"' >> ~/.zshrc
