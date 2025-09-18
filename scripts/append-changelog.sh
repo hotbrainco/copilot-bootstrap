@@ -2,8 +2,9 @@
 set -euo pipefail
 # Append (actually insert after header) a release body into CHANGELOG.md.
 # Usage:
-#   scripts/append-changelog.sh v0.2.1 release-notes.md
-# If release-notes.md is '-', read from stdin.
+#   scripts/append-changelog.sh v0.2.1 -            # read body from stdin (preferred in CI)
+#   scripts/append-changelog.sh v0.2.1 /path/file   # read body from a temp file
+# Body is inserted as the new top section; no persistent per-release note files are required.
 
 if [[ $# -lt 2 ]]; then
   echo "Usage: $0 <tag> <body-file|- (stdin)>" >&2

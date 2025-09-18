@@ -22,12 +22,9 @@ Conventions
 - Respect repository conventions in #file:CONTRIBUTING.md, #file:README.md, and any files in .github/ when present.
 
 Release Workflow
-- When creating a new release (e.g., `vX.Y.Z`):
-  1. Do NOT create `release-notes/*.md` files or any `release_*.md` files. These are not part of the repository's workflow.
-  2. Do NOT manually edit `CHANGELOG.md`. It is updated automatically by GitHub Action after a release is published.
-  3. Do NOT create any temporary release files in the working directory.
-  4. To create a release, use: `gh release create <tag> --notes "..."` or `git tag <tag> && git push origin <tag>` then create release via GitHub UI.
-  5. The automated workflow (`.github/workflows/update-changelog.yml`) handles updating `CHANGELOG.md` from the published release.
+- Create a release (tag push + GitHub Release) and the `CHANGELOG.md` is automatically updated by workflow logic. You never need to edit `CHANGELOG.md` directly.
+- Use either: `gh release create <tag> --generate-notes` or `gh release create <tag> --notes "..."` after pushing the tag.
+- Keep release notes concise and action-oriented; the automation prepends them to the changelog.
 
 Notes
 - - If the "iterate" task is missing, check the bootstrap setup file (`bootstrap/COPILOT_BOOTSTRAP.md`) and offer to (re)create .vscode/tasks.json and bootstrap/scripts/iterate.sh.

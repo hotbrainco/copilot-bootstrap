@@ -559,7 +559,7 @@ See `CHANGELOG.md` for a summarized history of releases (notably v0.2.0 which in
 
 Maintainers: after drafting a GitHub Release body locally (or copying the release body), you can append it automatically:
 ```bash
-scripts/append-changelog.sh v0.2.1 release-notes-draft.md
+scripts/append-changelog.sh v0.2.1 -
 # or pipe:
 gh release view v0.2.1 --json body -q .body | scripts/append-changelog.sh v0.2.1 -
 git add CHANGELOG.md && git commit -m "docs: update changelog for v0.2.1" && git push
