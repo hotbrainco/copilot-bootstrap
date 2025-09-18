@@ -170,7 +170,17 @@ Roadmap: shell completion (`cb <TAB>`), feature registry commands, and autoversi
 ### Optional: Automated Changelog Updates
 If enabled during install, a lightweight workflow updates `CHANGELOG.md` automatically whenever you publish a GitHub Release. The release body becomes the new top section.
 
-Disable later by removing `.github/workflows/update-changelog.yml`.
+Skip at install time by answering No to the prompt or pre-setting:
+```bash
+export BOOTSTRAP_DEFAULT_ENABLE_CHANGELOG_AUTO=N
+```
+
+Re-enable later (after a skip) via the feature manager:
+```bash
+cb features enable changelog
+```
+
+Disable going forward by removing `.github/workflows/update-changelog.yml` (existing CHANGELOG entries are preserved).
 
 ## Feature Toggles (Modular Components)
 

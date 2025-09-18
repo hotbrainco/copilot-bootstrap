@@ -1,4 +1,16 @@
 # Changelog
+## [v0.6.0] - 2025-09-17
+[Compare with v0.5.1](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.1...v0.6.0)
+
+### Added
+- Optional automated changelog workflow: installer now offers to enable a release-driven `CHANGELOG.md` updater (default Yes). Copies a portable `append-changelog` helper into `bootstrap/scripts/` when enabled.
+
+### Docs
+- README: new section describing automated changelog option.
+
+### Notes
+- Declining the option skips copying the workflow; can be re-enabled by re-running installer or manually adding the workflow + script.
+
 ## [v0.5.1] - 2025-09-17
 [Compare with v0.5.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.0...v0.5.1)
 
