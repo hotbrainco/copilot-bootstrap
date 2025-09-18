@@ -22,9 +22,11 @@ Conventions
 - Respect repository conventions in #file:CONTRIBUTING.md, #file:README.md, and any files in .github/ when present.
 
 Release Workflow
-- Create a release (tag push + GitHub Release) and the `CHANGELOG.md` is automatically updated by workflow logic. You never need to edit `CHANGELOG.md` directly.
-- Use either: `gh release create <tag> --generate-notes` or `gh release create <tag> --notes "..."` after pushing the tag.
-- Keep release notes concise and action-oriented; the automation prepends them to the changelog.
+- Create a release by pushing a semantic version tag (e.g., `git tag v0.6.3 && git push origin v0.6.3`).
+- The automated workflow creates a draft release with context and waits for Copilot to author the release notes.
+- When Copilot is invoked, review the commit context artifact and write comprehensive release notes.
+- Publish the release when ready, which automatically updates `CHANGELOG.md`.
+- Never edit `CHANGELOG.md` directly - it is managed by automation.
 
 Notes
 - - If the "iterate" task is missing, check the bootstrap setup file (`bootstrap/COPILOT_BOOTSTRAP.md`) and offer to (re)create .vscode/tasks.json and bootstrap/scripts/iterate.sh.
@@ -38,8 +40,9 @@ Principles-only stack handling
 - Drift control: Record current working assumptions in the PR body. If they change, update the PR. Do not create or modify stack-specific config files unless directed.
 
 Release Workflow
-- When creating a new release (e.g., `vX.Y.Z`):
-  1. Do NOT create `RELEASE_NOTES_*.md` files. These are not part of the repository's workflow.
-  2. Do NOT manually edit `CHANGELOG.md`. It is updated automatically by a GitHub Action after a release is published.
-  3. To create a release, ask the user for the release notes content.
-  4. Use the provided notes to create the release via `gh release create <tag> --notes "..."`.
+- When creating a new release:
+  1. Push a semantic version tag (e.g., `git tag v0.6.3 && git push origin v0.6.3`).
+  2. The automated workflow creates a draft release with commit context.
+  3. When invoked by the user, review the context artifact and author comprehensive release notes.
+  4. The user publishes the draft release, which triggers automatic `CHANGELOG.md` updates.
+  5. Do NOT create manual release files or edit `CHANGELOG.md` directly.
