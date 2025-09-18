@@ -57,7 +57,7 @@ jobs:
           tag="${{ steps.context.outputs.tag }}"
           prev_tag="${{ steps.context.outputs.previous_tag }}"
           
-          cat > DRAFT_BODY.md << 'EOF'
+          cat > DRAFT_BODY.md << EOF
           <!-- COPILOT TODO: Write release notes based on COPILOT_CONTEXT.md -->
           
           ## 🤖 Waiting for Copilot to author release notes...
@@ -74,8 +74,8 @@ jobs:
           5. Publish the release when ready
           
           **Context Summary:**
-          - Tag: `$tag`
-          - Previous: `$prev_tag`
+          - Tag: \`$tag\`
+          - Previous: \`$prev_tag\`
           - Commits: See artifact for details
           
           ---

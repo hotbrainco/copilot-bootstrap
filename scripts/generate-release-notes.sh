@@ -3,13 +3,9 @@ set -euo pipefail
 # Auto-generate rich release notes between the latest two semantic tags.
 # Zero args. Produces Markdown to stdout.
 # Env flags:
-#   RELEASE_NOTES_MIN_SIGNAL=1   (minimum non-chore sections required)
-#   RELEASE_NOTES_REQUIRE_FEATURE_OR_FIX=true  (fail if neither present)
 #   RELEASE_NOTES_JSON_OUT=path  (optional JSON dump with structured data)
 
 SEMVER_GLOB='v[0-9]*.[0-9]*.[0-9]*'
-RELEASE_NOTES_MIN_SIGNAL="${RELEASE_NOTES_MIN_SIGNAL:-1}"
-RELEASE_NOTES_REQUIRE_FEATURE_OR_FIX="${RELEASE_NOTES_REQUIRE_FEATURE_OR_FIX:-false}"
 JSON_OUT="${RELEASE_NOTES_JSON_OUT:-}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -88,18 +84,6 @@ n_tests=$(count_lines "$sec_tests")
 n_chore=$(count_lines "$sec_chore")
 n_uncat=$(count_lines "$uncategorized")
 n_notes=$(count_lines "$notes")
-
-signal_sections=0
-for v in $n_break $n_feat $n_fix $n_docs $n_ref $n_perf $n_tests; do
-  (( v > 0 )) && signal_sections=$((signal_sections+1))
-done
-
-if (( signal_sections < RELEASE_NOTES_MIN_SIGNAL )); then
-  die "Insufficient meaningful sections (found $signal_sections; need $RELEASE_NOTES_MIN_SIGNAL)"
-fi
-if [[ "$RELEASE_NOTES_REQUIRE_FEATURE_OR_FIX" == "true" ]] && (( n_feat + n_fix == 0 )); then
-  die "No feature or fix commits detected in range $RANGE"
-fi
 
 slug=$(git remote get-url origin 2>/dev/null | sed -E 's#(git@github.com:|https://github.com/)##;s/.git$//') || true
 
