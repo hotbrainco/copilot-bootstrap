@@ -632,7 +632,7 @@ add_cb_to_path_prompt() {
 		mkdir -p "$(dirname "$profile")" 2>/dev/null || true
 		{
 			echo ""
-					echo "# Added by copilot-bootstrap v0.6.1 to expose cb dispatcher"
+					echo "# Added by copilot-bootstrap v0.6.2 to expose cb dispatcher"
 			if [[ "$shell_name" == "fish" ]]; then
 				echo "set -gx PATH $path_entry \$PATH"
 			else
