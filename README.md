@@ -168,7 +168,13 @@ If using Node tooling you can also expose it via an npm script:
 Roadmap: shell completion (`cb <TAB>`), feature registry commands, and autoversion display.
 
 ### Optional: Automated Changelog Updates
-If enabled during install, a lightweight workflow updates `CHANGELOG.md` automatically whenever you publish a GitHub Release. The release body becomes the new top section.
+If enabled during install, a comprehensive workflow manages releases and changelog updates automatically:
+
+1. **Local validation**: A pre-push hook prevents version tag pushes unless you create `.github/RELEASE_NOTES.md` with comprehensive release notes
+2. **Automatic publishing**: When you push a version tag (e.g., `git tag v1.2.3 && git push origin v1.2.3`), GitHub automatically publishes the release using your notes
+3. **Changelog integration**: `CHANGELOG.md` is automatically updated with the release content and the temporary notes file is cleaned up
+
+This ensures every release has thoughtful, human-authored release notes while maintaining full automation.
 
 Skip at install time by answering No to the prompt or pre-setting:
 ```bash
