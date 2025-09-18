@@ -12,3 +12,6 @@ site/
 node_modules/
 dist/
 build/
+
+# Temporary release notes file (created locally during release process)
+.github/RELEASE_NOTES.md
