@@ -42,6 +42,7 @@ ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 : "${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:=}"
 : "${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:=}"
 : "${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:=}"
+: "${BOOTSTRAP_DEFAULT_ENABLE_CHANGELOG_AUTO:=}"
 
 # Source user-provided config first if present
 if [[ -f .copilot-bootstrap.conf ]]; then
@@ -68,6 +69,7 @@ finalize_defaults() {
 	DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
 	DEFAULT_RUN_DOCTOR_ON_INSTALL="${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:-Y}"
 	DEFAULT_BUILD_DOCS_ON_INSTALL="${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:-Y}"
+	DEFAULT_ENABLE_CHANGELOG_AUTO="${BOOTSTRAP_DEFAULT_ENABLE_CHANGELOG_AUTO:-Y}"
 }
 
 # Pages verification tuning (overridable via env)
@@ -650,6 +652,29 @@ add_cb_to_path_prompt() {
 }
 
 add_cb_to_path_prompt || true
+
+if yesno "Enable automated changelog updates from Releases?" "$DEFAULT_ENABLE_CHANGELOG_AUTO"; then
+	# Ensure workflow directory exists
+	mkdir -p .github/workflows
+	# Copy workflow if present in source and not already existing
+	if [[ -f "$SRC/.github/workflows/update-changelog.yml" ]]; then
+		if [[ ! -f ./.github/workflows/update-changelog.yml ]]; then
+			cp "$SRC/.github/workflows/update-changelog.yml" ./.github/workflows/
+		fi
+	fi
+	# Copy helper script into bootstrap scripts namespace for portability
+	if [[ -f "$SRC/scripts/append-changelog.sh" ]]; then
+		mkdir -p ./bootstrap/scripts
+		cp "$SRC/scripts/append-changelog.sh" ./bootstrap/scripts/
+		chmod +x ./bootstrap/scripts/append-changelog.sh || true
+	fi
+	echo "🧾 Auto-changelog workflow enabled (updates CHANGELOG.md on release)."
+else
+	# If user declines and file exists from a prior run, leave it but inform
+	if [[ -f ./.github/workflows/update-changelog.yml ]]; then
+		echo "(Keeping existing update-changelog workflow; disable manually if undesired)"
+	fi
+fi
 
 echo "✅ Copilot Bootstrap installed. Next steps:"
 echo "  bash bootstrap/scripts/iterate.sh doctor"

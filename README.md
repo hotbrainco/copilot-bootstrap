@@ -167,6 +167,11 @@ If using Node tooling you can also expose it via an npm script:
 
 Roadmap: shell completion (`cb <TAB>`), feature registry commands, and autoversion display.
 
+### Optional: Automated Changelog Updates
+If enabled during install, a lightweight workflow updates `CHANGELOG.md` automatically whenever you publish a GitHub Release. The release body becomes the new top section.
+
+Disable later by removing `.github/workflows/update-changelog.yml`.
+
 ## Feature Toggles (Modular Components)
 
 You can enable or disable optional capabilities after initial bootstrap using the feature manager.
