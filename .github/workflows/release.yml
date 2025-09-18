@@ -1,4 +1,4 @@
-name: Release (annotated tag enforced)
+name: Release (required notes file)
 
 on:
   push:
@@ -12,44 +12,54 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout full history
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Extract annotated tag message
-        id: notes
+      - name: Check for required release notes file
         run: |
           tag="${GITHUB_REF_NAME}"
-          echo "Processing tag: $tag"
+          notes_file=".github/RELEASE_NOTES.md"
           
-          # Get tag object contents (only works if annotated)
-          body="$(git for-each-ref "refs/tags/${tag}" --format='%(contents)')"
-          trimmed="$(printf '%s' "$body" | sed '/^[[:space:]]*$/d')"
+          echo "Checking for release notes file: $notes_file"
           
-          if [ -z "$trimmed" ]; then
-            echo "::error::Tag ${tag} has no annotated message (likely a lightweight tag)."
+          if [[ ! -f "$notes_file" ]]; then
+            echo "::error::Release notes file not found: $notes_file"
+            echo "::error::"
             echo "::error::Cannot create release without release notes!"
             echo "::error::"
-            echo "::error::To fix this, create an annotated tag with release notes:"
-            echo "::error::  git tag -a ${tag} -m \"### New Features"
+            echo "::error::To fix this:"
+            echo "::error::1. Create the file: $notes_file"
+            echo "::error::2. Write your release notes in Markdown format"
+            echo "::error::3. Commit and push the file"
+            echo "::error::4. Re-run this workflow (or push the tag again)"
             echo "::error::"
-            echo "::error::  - Feature 1"
-            echo "::error::  - Feature 2\""
-            echo "::error::  git push --force origin ${tag}"
+            echo "::error::Example content:"
+            echo "::error::### New Features"
+            echo "::error::- Feature 1"
+            echo "::error::- Feature 2"
+            echo "::error::"
+            echo "::error::### Bug Fixes"
+            echo "::error::- Fix 1"
             exit 1
           fi
           
-          echo "Found release notes (${#trimmed} characters)"
-          echo "body<<'EOF'" >> "$GITHUB_OUTPUT"
-          printf '%s\n' "$trimmed" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          # Check if file is empty (only whitespace)
+          if [[ ! -s "$notes_file" ]] || [[ -z "$(grep -v '^[[:space:]]*$' "$notes_file")" ]]; then
+            echo "::error::Release notes file exists but is empty: $notes_file"
+            echo "::error::Please add meaningful release notes and try again."
+            exit 1
+          fi
+          
+          echo "✓ Release notes file found and contains content"
+          echo "notes_file=$notes_file" >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         run: |
           tag="${GITHUB_REF_NAME}"
-          echo "Creating release for $tag"
-          gh release create "$tag" --notes "${{ steps.notes.outputs.body }}"
+          echo "Creating release for $tag using notes from $notes_file"
+          gh release create "$tag" --notes-file "$notes_file"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -58,26 +68,35 @@ jobs:
           tag="${GITHUB_REF_NAME}"
           echo "Updating CHANGELOG.md for $tag"
           
-          # Create temp file with release notes
-          notes_file="$(mktemp)"
-          printf '%s\n' "${{ steps.notes.outputs.body }}" > "$notes_file"
-          
           # Use our existing append-changelog script
           chmod +x scripts/append-changelog.sh
           ./scripts/append-changelog.sh "$tag" "$notes_file"
           
           echo "Changelog updated successfully"
 
-      - name: Commit changelog
+      - name: Clean up release notes file
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          notes_file=".github/RELEASE_NOTES.md"
+          
+          echo "Deleting release notes file to prevent reuse: $notes_file"
+          rm "$notes_file"
+          
+          echo "✓ Deleted $notes_file - must be recreated for next release"
+
+      - name: Commit changelog and cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          if git diff --quiet CHANGELOG.md; then
-            echo "No changelog changes to commit"
+          # Add changelog and note the deleted file
+          git add CHANGELOG.md
+          git add -u .github/RELEASE_NOTES.md  # Stage the deletion
+          
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
           else
-            echo "Committing changelog update for ${GITHUB_REF_NAME}"
-            git add CHANGELOG.md
-            git commit -m "chore: changelog: ${GITHUB_REF_NAME}"
+            echo "Committing changelog update and cleanup for ${GITHUB_REF_NAME}"
+            git commit -m "chore: release ${GITHUB_REF_NAME} - update changelog and clean release notes"
             git push
           fi
