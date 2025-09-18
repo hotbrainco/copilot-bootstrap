@@ -1,4 +1,9 @@
 # Changelog
+## [v0.6.4] - 2025-09-18
+[Compare with v0.6.3](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.3...v0.6.4)
+
+This is a test release to confirm the end-to-end automation is working correctly.
+
 
 ## [v0.6.3] - 2025-09-18
 [Compare with v0.6.2](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.2...v0.6.3)
