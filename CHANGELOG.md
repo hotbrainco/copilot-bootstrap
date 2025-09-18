@@ -1,4 +1,17 @@
 # Changelog
+## [v0.5.0] - 2025-09-17
+[Compare with v0.4.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.4.0...v0.5.0)
+
+### Added
+- External configuration sourcing: installer now loads `.copilot-bootstrap.conf` (if present) before packaged `installer-defaults.conf`, making it the single source of truth for defaults.
+
+### Changed
+- Inline default variable assignments removed; all defaults centralized.
+- README: new section describing config precedence and example file.
+
+### Notes
+- Environment variables still override file values; non-interactive automation unaffected.
+
 ## [v0.4.0] - 2025-09-17
 [Compare with v0.3.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.3.0...v0.4.0)
 

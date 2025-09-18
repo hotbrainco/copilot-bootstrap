@@ -17,26 +17,61 @@ fi
 ZIP_URL="https://github.com/$REPO/archive/refs/tags/$TAG.zip"
 
 # ----------------------------------------------------------------------
-# Default prompt choices (edit here or override via environment variables)
-# Set to Y or N for yes/no prompts; non-boolean prompts use sensible values.
-# You can override without editing by exporting BOOTSTRAP_DEFAULT_* vars, e.g.:
-#   BOOTSTRAP_DEFAULT_SETUP_DOCS=Y BOOTSTRAP_DEFAULT_REPO_VISIBILITY=public bash copilot-bootstrap.sh
+# Externalized defaults sourcing (single source of truth)
+# Order of precedence (highest first):
+#   1. Explicit environment variables (BOOTSTRAP_DEFAULT_*)
+#   2. Local repo config .copilot-bootstrap.conf (if present before run)
+#   3. installer-defaults.conf bundled with release archive
+#   4. Hard fallback literals below (only used if nothing set)
+# Users should customize by creating .copilot-bootstrap.conf with KEY=VALUE lines.
 # ----------------------------------------------------------------------
-DEFAULT_PROCEED_INSTALL="${BOOTSTRAP_DEFAULT_PROCEED_INSTALL:-Y}"
-DEFAULT_INIT_GIT="${BOOTSTRAP_DEFAULT_INIT_GIT:-Y}"
-DEFAULT_CONNECT_GITHUB="${BOOTSTRAP_DEFAULT_CONNECT_GITHUB:-Y}"
-DEFAULT_PUSH_INITIAL="${BOOTSTRAP_DEFAULT_PUSH_INITIAL:-Y}"
-DEFAULT_SETUP_DOCS="${BOOTSTRAP_DEFAULT_SETUP_DOCS:-N}"
-DEFAULT_DOCS_CHOICE="${BOOTSTRAP_DEFAULT_DOCS_CHOICE:-1}"  # 1=MkDocs, 2=VitePress, 3=Docusaurus, 4=Simple
-DEFAULT_INSTALL_MKDOCS="${BOOTSTRAP_DEFAULT_INSTALL_MKDOCS:-Y}"
-DEFAULT_COMMIT_DOCS="${BOOTSTRAP_DEFAULT_COMMIT_DOCS:-Y}"
-DEFAULT_ENABLE_PAGES_INTERACTIVE="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE:-N}"
-DEFAULT_RUN_DOCS_NOW="${BOOTSTRAP_DEFAULT_RUN_DOCS_NOW:-N}"
-DEFAULT_REPO_VISIBILITY="${BOOTSTRAP_DEFAULT_REPO_VISIBILITY:-private}"
-DEFAULT_VERIFY_PAGES="${BOOTSTRAP_DEFAULT_VERIFY_PAGES:-Y}"
-DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
-DEFAULT_RUN_DOCTOR_ON_INSTALL="${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:-Y}"
-DEFAULT_BUILD_DOCS_ON_INSTALL="${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:-Y}"
+
+# Predeclare vars (unset) so shellcheck-style tools wouldn't complain if sourced file missing
+for _v in \
+	BOOTSTRAP_DEFAULT_PROCEED_INSTALL \
+	BOOTSTRAP_DEFAULT_INIT_GIT \
+	BOOTSTRAP_DEFAULT_CONNECT_GITHUB \
+	BOOTSTRAP_DEFAULT_PUSH_INITIAL \
+	BOOTSTRAP_DEFAULT_SETUP_DOCS \
+	BOOTSTRAP_DEFAULT_DOCS_CHOICE \
+	BOOTSTRAP_DEFAULT_INSTALL_MKDOCS \
+	BOOTSTRAP_DEFAULT_COMMIT_DOCS \
+	BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE \
+	BOOTSTRAP_DEFAULT_RUN_DOCS_NOW \
+	BOOTSTRAP_DEFAULT_REPO_VISIBILITY \
+	BOOTSTRAP_DEFAULT_VERIFY_PAGES \
+	BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW \
+	BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL \
+	BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL; do
+	: "${!_v}" >/dev/null 2>&1 || true
+done
+
+# Source user-provided config first if present
+if [[ -f .copilot-bootstrap.conf ]]; then
+	# shellcheck disable=SC1091
+	. ./.copilot-bootstrap.conf || true
+fi
+
+# Later we'll copy installer-defaults.conf; source it after extraction (see below) if values still unset.
+
+# Function to finalize defaults after potential sourcing of packaged defaults
+finalize_defaults() {
+	DEFAULT_PROCEED_INSTALL="${BOOTSTRAP_DEFAULT_PROCEED_INSTALL:-Y}"
+	DEFAULT_INIT_GIT="${BOOTSTRAP_DEFAULT_INIT_GIT:-Y}"
+	DEFAULT_CONNECT_GITHUB="${BOOTSTRAP_DEFAULT_CONNECT_GITHUB:-Y}"
+	DEFAULT_PUSH_INITIAL="${BOOTSTRAP_DEFAULT_PUSH_INITIAL:-Y}"
+	DEFAULT_SETUP_DOCS="${BOOTSTRAP_DEFAULT_SETUP_DOCS:-N}"
+	DEFAULT_DOCS_CHOICE="${BOOTSTRAP_DEFAULT_DOCS_CHOICE:-1}"
+	DEFAULT_INSTALL_MKDOCS="${BOOTSTRAP_DEFAULT_INSTALL_MKDOCS:-Y}"
+	DEFAULT_COMMIT_DOCS="${BOOTSTRAP_DEFAULT_COMMIT_DOCS:-Y}"
+	DEFAULT_ENABLE_PAGES_INTERACTIVE="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_INTERACTIVE:-N}"
+	DEFAULT_RUN_DOCS_NOW="${BOOTSTRAP_DEFAULT_RUN_DOCS_NOW:-N}"
+	DEFAULT_REPO_VISIBILITY="${BOOTSTRAP_DEFAULT_REPO_VISIBILITY:-private}"
+	DEFAULT_VERIFY_PAGES="${BOOTSTRAP_DEFAULT_VERIFY_PAGES:-Y}"
+	DEFAULT_ENABLE_PAGES_NOW="${BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW:-N}"
+	DEFAULT_RUN_DOCTOR_ON_INSTALL="${BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL:-Y}"
+	DEFAULT_BUILD_DOCS_ON_INSTALL="${BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL:-Y}"
+}
 
 # Pages verification tuning (overridable via env)
 # Seconds to wait and poll intervals for build status and URL probe
@@ -70,7 +105,24 @@ yesno() {
 	[[ "$ans" == "y" || "$ans" == "Y" ]]
 }
 
-# Pre-install summary and confirmation (TTY or BOOTSTRAP_INTERACTIVE)
+TMPDIR="$(mktemp -d)"
+
+curl -fsSL "$ZIP_URL" -o "$TMPDIR/cb.zip"
+unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
+# Strip leading 'v' from tag for extracted folder naming
+TAG_DIR="${TAG#v}"
+SRC="$TMPDIR/copilot-bootstrap-$TAG_DIR"
+
+# Source packaged installer-defaults.conf if present and user has not defined variables
+if [[ -f "$SRC/installer-defaults.conf" ]]; then
+	# shellcheck disable=SC1091
+	. "$SRC/installer-defaults.conf" || true
+fi
+
+# Now resolve final defaults
+finalize_defaults
+
+# Pre-install summary and confirmation (after defaults resolved)
 if is_tty; then
 	echo "Copilot Bootstrap will install:"
 	echo "  - bootstrap/scripts/* into ./bootstrap/"
@@ -83,17 +135,10 @@ if is_tty; then
 	echo ""
 	if ! yesno "Proceed with installation?" "$DEFAULT_PROCEED_INSTALL"; then
 		echo "Aborted. No changes made."
+		rm -rf "$TMPDIR"
 		exit 0
 	fi
 fi
-
-TMPDIR="$(mktemp -d)"
-
-curl -fsSL "$ZIP_URL" -o "$TMPDIR/cb.zip"
-unzip -q "$TMPDIR/cb.zip" -d "$TMPDIR"
-# Strip leading 'v' from tag for extracted folder naming
-TAG_DIR="${TAG#v}"
-SRC="$TMPDIR/copilot-bootstrap-$TAG_DIR"
 
 
 # Create bootstrap subfolder for scripts and docs
@@ -588,7 +633,7 @@ add_cb_to_path_prompt() {
 		mkdir -p "$(dirname "$profile")" 2>/dev/null || true
 		{
 			echo ""
-			echo "# Added by copilot-bootstrap v0.4.0 to expose cb dispatcher"
+					echo "# Added by copilot-bootstrap v0.5.0 to expose cb dispatcher"
 			if [[ "$shell_name" == "fish" ]]; then
 				echo "set -gx PATH $path_entry \$PATH"
 			else

@@ -366,6 +366,44 @@ Run any task via the Command Palette → "Tasks: Run Task".
 
 ## Configuration
 
+### Installer Config File (v0.4.1+)
+
+Instead of editing the installer script or exporting many env vars, you can create a `.copilot-bootstrap.conf` file in the target repo BEFORE running the one‑liner. The installer loads it first, then its packaged `installer-defaults.conf`, then applies any environment variable overrides.
+
+Precedence (highest first):
+1. Explicit environment variables (`BOOTSTRAP_DEFAULT_*`)
+2. Local `.copilot-bootstrap.conf`
+3. Release `installer-defaults.conf`
+4. Hardcoded fallbacks (only if all above unset)
+
+Example `.copilot-bootstrap.conf`:
+```bash
+BOOTSTRAP_DEFAULT_PROCEED_INSTALL=Y
+BOOTSTRAP_DEFAULT_INIT_GIT=Y
+BOOTSTRAP_DEFAULT_CONNECT_GITHUB=Y
+BOOTSTRAP_DEFAULT_SETUP_DOCS=Y
+BOOTSTRAP_DEFAULT_DOCS_CHOICE=1   # MkDocs
+BOOTSTRAP_DEFAULT_INSTALL_MKDOCS=Y
+BOOTSTRAP_DEFAULT_COMMIT_DOCS=Y
+BOOTSTRAP_DEFAULT_ENABLE_PAGES_NOW=N
+BOOTSTRAP_DEFAULT_RUN_DOCTOR_ON_INSTALL=Y
+BOOTSTRAP_DEFAULT_BUILD_DOCS_ON_INSTALL=Y
+```
+
+Then run (quick streaming form):
+```bash
+TAG=$(curl -fsSL https://api.github.com/repos/hotbrainco/copilot-bootstrap/releases/latest | awk -F '"' '/tag_name/ {print $4; exit}')
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh)"
+```
+
+Or auditable form:
+```bash
+curl -fsSL https://raw.githubusercontent.com/hotbrainco/copilot-bootstrap/${TAG}/copilot-bootstrap.sh -o copilot-bootstrap.sh
+bash copilot-bootstrap.sh
+```
+
+You can keep the config file for future updates; `update.sh` does not overwrite it.
+
 The script supports environment variables and an optional `.iterate.json` file (requires `jq`) to tune behavior.
 Default prompt choices can also be controlled via dedicated environment variables without editing the script:
 
