@@ -1,5 +1,9 @@
 name: Update Changelog
 
+# This workflow automatically updates CHANGELOG.md when a release is published.
+# It extracts release notes from the GitHub release and prepends them to CHANGELOG.md.
+# DO NOT manually edit CHANGELOG.md or create release-notes files - this is fully automated.
+
 on:
   release:
     types: [released]
