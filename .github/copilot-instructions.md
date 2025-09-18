@@ -31,3 +31,10 @@ Principles-only stack handling
 - Late binding + safety: Prefer generic commands. Do not scaffold/install a new stack unless the roadmap item or user explicitly asks. Never mix package managers or toolchains.
 - Detection discipline: If multiple conflicting signals are found (e.g., both pnpm and yarn lockfiles), stop and ask which to use. Default to soft-skip over guessing installs.
 - Drift control: Record current working assumptions in the PR body. If they change, update the PR. Do not create or modify stack-specific config files unless directed.
+
+Release Workflow
+- When creating a new release (e.g., `vX.Y.Z`):
+  1. Do NOT create `RELEASE_NOTES_*.md` files. These are not part of the repository's workflow.
+  2. Do NOT manually edit `CHANGELOG.md`. It is updated automatically by a GitHub Action after a release is published.
+  3. To create a release, ask the user for the release notes content.
+  4. Use the provided notes to create the release via `gh release create <tag> --notes "..."`.
