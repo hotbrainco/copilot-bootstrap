@@ -1,20 +1,45 @@
 # Changelog
-## [v0.6.2] - 2025-09-18
-[Compare with v0.6.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.0...v0.6.2)
 
-**Full Changelog**: https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.1...v0.6.2
+## [v0.6.3] - 2025-09-18
+[Compare with v0.6.2](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.6.2...v0.6.3)
 
-## [v0.6.0] - 2025-09-17
-[Compare with v0.5.1](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.1...v0.6.0)
+### ✨ New Features
 
-### Added
-- Optional automated changelog workflow: installer now offers to enable a release-driven `CHANGELOG.md` updater (default Yes). Copies a portable `append-changelog` helper into `bootstrap/scripts/` when enabled.
+**Copilot-Authored Release System**
+- Automatic draft release creation when tags are pushed
+- Context collection including commit history and changes  
+- Workflow that blocks publication until Copilot writes proper release notes
+- Integration with existing changelog automation
 
-### Docs
-- README: new section describing automated changelog option.
+**Release Notes Generator** 
+- New `scripts/generate-release-notes.sh` for structured release context
+- Intelligent commit parsing and categorization
+- Zero-argument operation using git tag detection
+- Quality output for Copilot context gathering
 
-### Notes
-- Declining the option skips copying the workflow; can be re-enabled by re-running installer or manually adding the workflow + script.
+### 🔧 Improvements
+
+**Feature System Integration**
+- Enhanced `changelog.sh` feature to manage both changelog and release workflows
+- Unified toggle system for all release automation components
+
+**Documentation Updates**
+- Updated Copilot instructions to reflect automated release process
+- Removed manual release creation steps from workflows
+
+### 🛠️ Technical Details
+
+This system creates a collaborative workflow where:
+1. Developers push semantic version tags (e.g., `v0.6.3`)
+2. GitHub Actions automatically creates a draft release with commit context
+3. GitHub Copilot reviews the context and writes meaningful release notes
+4. Once published, the changelog is automatically updated
+
+This ensures every release gets thoughtful, human-quality documentation while maintaining full automation.
+
+### 🎯 What's Next
+
+The release automation is now complete and battle-tested. Future releases will benefit from this streamlined, Copilot-authored approach to release documentation.
 
 ## [v0.5.1] - 2025-09-17
 [Compare with v0.5.0](https://github.com/hotbrainco/copilot-bootstrap/compare/v0.5.0...v0.5.1)
